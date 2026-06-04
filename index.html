@@ -4,39 +4,83 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MaskedUSD — Coming Soon</title>
-  <meta name="description" content="Privacy stablecoin infrastructure on Solana. 1:1 USDC-backed $USDM, shielded by dZK Proof." />
+  <meta name="description" content="Privacy stablecoin infrastructure on Base. 1:1 USDC-backed $USDM, shielded by dZK Proof." />
 
   <!-- Open Graph / social -->
   <meta property="og:title" content="MaskedUSD" />
-  <meta property="og:description" content="Privacy stablecoin infrastructure on Solana." />
+  <meta property="og:description" content="Privacy stablecoin infrastructure on Base. 1:1 USDC-backed $USDM, shielded by dZK Proof." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://maskedusd.com" />
+  <meta property="og:site_name" content="MaskedUSD" />
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:site" content="@MaskedUSD" />
+  <meta name="twitter:title" content="MaskedUSD" />
+  <meta name="twitter:description" content="Privacy stablecoin infrastructure on Base. 1:1 USDC-backed $USDM, shielded by dZK Proof." />
+  <meta name="theme-color" content="#F6F2FB" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <!-- subtle animated grain/glow backdrop -->
   <div class="backdrop" aria-hidden="true">
-    <div class="glow glow--one"></div>
-    <div class="glow glow--two"></div>
+    <div class="grid"></div>
+    <div class="wash wash--one"></div>
+    <div class="wash wash--two"></div>
   </div>
 
+  <header class="topbar" aria-label="Build status">
+    <span class="topbar__cell"><span class="topbar__k">CHAIN</span><span class="topbar__v">BASE</span></span>
+    <span class="topbar__sep" aria-hidden="true">/</span>
+    <span class="topbar__cell"><span class="topbar__k">BACKING</span><span class="topbar__v">NATIVE USDC</span></span>
+    <span class="topbar__sep" aria-hidden="true">/</span>
+    <span class="topbar__cell"><span class="topbar__k">PROOF</span><span class="topbar__v">dZK</span></span>
+  </header>
+
   <main class="stage">
-    <span class="mask" aria-hidden="true">🎭</span>
+    <div class="mask" aria-hidden="true">
+      <svg viewBox="0 0 120 64" width="96" height="auto" role="img" focusable="false">
+        <defs>
+          <linearGradient id="maskFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#A78CEC" />
+            <stop offset="100%" stop-color="#8B6FE0" />
+          </linearGradient>
+        </defs>
+        <!-- domino mask silhouette -->
+        <path
+          d="M14 14
+             C 8 14, 4 22, 4 32
+             C 4 46, 14 56, 28 56
+             L 50 56
+             C 56 56, 58 50, 60 50
+             C 62 50, 64 56, 70 56
+             L 92 56
+             C 106 56, 116 46, 116 32
+             C 116 22, 112 14, 106 14
+             C 96 14, 86 18, 78 22
+             C 72 25, 66 26, 60 26
+             C 54 26, 48 25, 42 22
+             C 34 18, 24 14, 14 14 Z"
+          fill="url(#maskFill)"
+        />
+        <!-- eye cutouts -->
+        <ellipse cx="32" cy="34" rx="9" ry="6" fill="#F6F2FB" />
+        <ellipse cx="88" cy="34" rx="9" ry="6" fill="#F6F2FB" />
+        <!-- inner highlights to keep it polished, not flat -->
+        <ellipse cx="29" cy="32" rx="2.4" ry="1.6" fill="#6B4FCF" opacity="0.55" />
+        <ellipse cx="85" cy="32" rx="2.4" ry="1.6" fill="#6B4FCF" opacity="0.55" />
+      </svg>
+    </div>
 
     <h1 class="wordmark">Masked<span class="wordmark__accent">USD</span></h1>
 
     <p class="tagline">
-      Privacy stablecoin infrastructure on Solana.<br />
-      <span class="tagline__muted">Shielded by dZK Proof.</span>
+      Privacy stablecoin infrastructure on Base.<br />
+      <span class="tagline__muted">1:1 USDC-backed $USDM, shielded by dZK Proof.</span>
     </p>
 
-    <p class="status">
+    <p class="status" role="status" aria-live="polite">
       <span class="status__dot" aria-hidden="true"></span>
       Coming soon
     </p>
@@ -53,6 +97,9 @@
     </nav>
   </main>
 
-  <footer class="footer">Behind the Mask</footer>
+  <footer class="footer">
+    <span class="footer__mark" aria-hidden="true"></span>
+    Behind the Mask
+  </footer>
 </body>
 </html>
