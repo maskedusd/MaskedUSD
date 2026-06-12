@@ -4,11 +4,23 @@ import MaskIcon from "./MaskIcon";
 const X_URL = "https://x.com/MaskedUSD";
 const TELEGRAM_URL = "https://t.me/maskedusd";
 
-export default function Hero() {
+/**
+ * The landing hero. `entered` flips true when the intro terminal hands off; the
+ * `is-entered` class then eases each `.enter` / `.enter-fade` element in, with
+ * per-element transition-delays for a staggered "load in".
+ */
+export default function Hero({ entered = true }: { entered?: boolean }) {
   return (
-    <section className="relative flex min-h-screen w-full flex-col overflow-hidden bg-bg">
+    <section
+      className={`relative flex min-h-screen w-full flex-col overflow-hidden bg-bg ${
+        entered ? "is-entered" : ""
+      }`}
+    >
       {/* Layer 0 — interactive distortion backdrop (lavender, brand-tuned) */}
-      <div className="absolute inset-0 z-0">
+      <div
+        className="enter-fade absolute inset-0 z-0"
+        style={{ transitionDelay: "0ms" }}
+      >
         <GridDistortion
           imageSrc="/hero-lavender.png"
           grid={18}
@@ -25,7 +37,10 @@ export default function Hero() {
           reaches the canvas; only the interactive controls opt back in. */}
       <div className="pointer-events-none relative z-20 flex min-h-screen flex-col">
         {/* Nav */}
-        <header className="w-full px-4 pt-5 sm:px-6 sm:pt-6">
+        <header
+          className="enter w-full px-4 pt-5 sm:px-6 sm:pt-6"
+          style={{ transitionDelay: "120ms" }}
+        >
           <nav className="glass pointer-events-auto mx-auto flex w-full min-w-0 max-w-5xl items-center justify-between gap-3 rounded-full py-2.5 pl-4 pr-2.5 sm:gap-4 sm:pl-5">
             <a
               href="/"
@@ -65,25 +80,37 @@ export default function Hero() {
 
         {/* Hero body */}
         <div className="flex flex-1 items-center justify-center px-5 py-16">
-          <div className="rise mx-auto max-w-2xl text-center">
-            <span className="glass pointer-events-auto mx-auto mb-7 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 font-mono text-[0.7rem] uppercase tracking-[0.12em] text-ink-muted">
+          <div className="mx-auto max-w-2xl text-center">
+            <span
+              className="enter glass pointer-events-auto mx-auto mb-7 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 font-mono text-[0.7rem] uppercase tracking-[0.12em] text-ink-muted"
+              style={{ transitionDelay: "280ms" }}
+            >
               <span className="status-dot" aria-hidden="true" />
               Building on Base
             </span>
 
-            <h1 className="font-display text-4xl font-bold leading-[1.05] tracking-tight text-ink sm:text-6xl lg:text-7xl">
+            <h1
+              className="enter font-display text-4xl font-bold leading-[1.05] tracking-tight text-ink sm:text-6xl lg:text-7xl"
+              style={{ transitionDelay: "380ms" }}
+            >
               Hold dollars.
               <br />
               Keep them <span className="text-accent-deep">private</span>.
             </h1>
 
-            <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-ink-muted sm:text-lg">
+            <p
+              className="enter mx-auto mt-6 max-w-xl text-base leading-relaxed text-ink-muted sm:text-lg"
+              style={{ transitionDelay: "520ms" }}
+            >
               Privacy stablecoin infrastructure on Base. 1:1 USDC-backed{" "}
               <span className="font-medium text-ink">$USDM</span>, shielded by
               dZK Proof.
             </p>
 
-            <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <div
+              className="enter mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row"
+              style={{ transitionDelay: "660ms" }}
+            >
               <a
                 href={TELEGRAM_URL}
                 target="_blank"
@@ -105,9 +132,15 @@ export default function Hero() {
         </div>
 
         {/* Footer row */}
-        <footer className="flex w-full items-center justify-between px-6 pb-5 font-mono text-[0.68rem] uppercase tracking-[0.18em] text-ink-dim sm:pb-6">
+        <footer
+          className="enter flex w-full items-center justify-between px-6 pb-5 font-mono text-[0.68rem] uppercase tracking-[0.18em] text-ink-dim sm:pb-6"
+          style={{ transitionDelay: "780ms" }}
+        >
           <span>Behind the Mask</span>
-          <span className="hidden items-center gap-2 sm:inline-flex" aria-hidden="true">
+          <span
+            className="hidden items-center gap-2 sm:inline-flex"
+            aria-hidden="true"
+          >
             Move your cursor
             <span className="text-accent">✦</span>
           </span>

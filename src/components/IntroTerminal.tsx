@@ -81,7 +81,8 @@ const SCRIPT: Line[] = [
  * Tune the whole feel here. Total typing stays roughly ~1.9–2.4s.
  */
 const TIMING = {
-  startDelay: 260, // beat before the first character types
+  entrance: 480, // terminal window fades/scales in before any typing
+  startDelay: 220, // beat after the window appears, before the first character
   charDelay: 24, // per-character typewriter speed (input lines)
   printDelay: 180, // beat before a printed output line appears
   betweenLines: 210, // gap after one line completes, before the next begins
@@ -141,23 +142,37 @@ function dotStyle(color: string): React.CSSProperties {
 }
 
 /* ── COMPONENT ────────────────────────────────────────────────────────────── */
-export default function IntroTerminal({ onDone }: { onDone: () => void }) {
+export default function IntroTerminal({
+  onDone,
+  onExitStart,
+}: {
+  onDone: () => void;
+  /** Fires once when the exit fade begins — used to start the hero load-in. */
+  onExitStart?: () => void;
+}) {
   // Per-line reveal count: typed-character count for "input", 0/1 for "print".
   const [progress, setProgress] = useState<number[]>(() => SCRIPT.map(() => 0));
   const [activeLine, setActiveLine] = useState(0);
   const [done, setDone] = useState(false); // typing finished
   const [exiting, setExiting] = useState(false); // exit transition running
+  const [windowIn, setWindowIn] = useState(false); // terminal window has appeared
   const [statusMsg, setStatusMsg] = useState(""); // polite live-region text
 
-  // onDone may be an unstable closure; keep the latest in a ref (updated in an
-  // effect, never during render).
+  // onDone / onExitStart may be unstable closures; keep the latest in refs
+  // (updated in effects, never during render).
   const onDoneRef = useRef(onDone);
   useEffect(() => {
     onDoneRef.current = onDone;
   }, [onDone]);
 
-  // onDone() must fire exactly once, ever.
+  const onExitStartRef = useRef(onExitStart);
+  useEffect(() => {
+    onExitStartRef.current = onExitStart;
+  }, [onExitStart]);
+
+  // onDone() must fire exactly once, ever; onExitStart() likewise.
   const finishedRef = useRef(false);
+  const exitStartedRef = useRef(false);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const reduced = useMemo(() => prefersReducedMotion(), []);
@@ -180,6 +195,10 @@ export default function IntroTerminal({ onDone }: { onDone: () => void }) {
     const startExit = (holdMs: number) =>
       schedule(() => {
         setExiting(true);
+        if (!exitStartedRef.current) {
+          exitStartedRef.current = true;
+          onExitStartRef.current?.();
+        }
         schedule(finish, TIMING.exit);
       }, holdMs);
 
@@ -192,9 +211,10 @@ export default function IntroTerminal({ onDone }: { onDone: () => void }) {
     schedule(() => startExit(0), TIMING.failsafe);
 
     if (reduced) {
-      // Reveal everything, brief hold, simple fade exit. Deferred via a 0ms
-      // timer so we don't call setState synchronously inside the effect body.
+      // Show the window and all lines at once, brief hold, simple fade exit.
+      // Deferred via a 0ms timer so we don't setState synchronously here.
       schedule(() => {
+        setWindowIn(true);
         setProgress(FULL_PROGRESS);
         setActiveLine(SCRIPT.length);
         setDone(true);
@@ -205,6 +225,9 @@ export default function IntroTerminal({ onDone }: { onDone: () => void }) {
         timersRef.current = [];
       };
     }
+
+    // The window appears first; typing begins only once it has settled.
+    schedule(() => setWindowIn(true), 30);
 
     // Typewriter driver — walk the script line by line.
     const runLine = (index: number) => {
@@ -245,7 +268,7 @@ export default function IntroTerminal({ onDone }: { onDone: () => void }) {
       step(1);
     };
 
-    schedule(() => runLine(0), TIMING.startDelay);
+    schedule(() => runLine(0), TIMING.entrance + TIMING.startDelay);
 
     return () => {
       timers.forEach(clearTimeout);
@@ -349,10 +372,17 @@ export default function IntroTerminal({ onDone }: { onDone: () => void }) {
           border: "1px solid rgba(184,164,255,0.22)",
           boxShadow:
             "0 40px 100px -30px rgba(123,79,207,0.5), 0 0 60px -20px rgba(139,111,224,0.35), inset 0 1px 0 rgba(255,255,255,0.05)",
+          opacity: windowIn ? 1 : 0,
           transform: exiting
             ? "translateY(-6px) scale(0.985)"
-            : "translateY(0) scale(1)",
-          transition: `transform ${TIMING.exit}ms cubic-bezier(0.4, 0, 0.2, 1)`,
+            : windowIn
+              ? "translateY(0) scale(1)"
+              : "translateY(10px) scale(0.96)",
+          transition: reduced
+            ? "none"
+            : exiting
+              ? `transform ${TIMING.exit}ms cubic-bezier(0.4, 0, 0.2, 1)`
+              : `opacity ${TIMING.entrance}ms ease, transform ${TIMING.entrance}ms cubic-bezier(0.16, 0.84, 0.3, 1)`,
           willChange: "transform, opacity",
         }}
       >

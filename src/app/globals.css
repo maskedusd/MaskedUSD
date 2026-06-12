@@ -85,19 +85,40 @@ body {
   100% { box-shadow: 0 0 0 0 rgba(139, 111, 224, 0); }
 }
 
-/* One-shot entrance for the hero content. */
-.rise {
-  animation: rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+/* ── Landing entrance ──────────────────────────────────────────────────────
+ * Elements begin hidden and ease in once an ancestor gets `.is-entered`
+ * (toggled when the intro terminal hands off). Each item staggers via an
+ * inline transition-delay. `.enter` rises + fades; `.enter-fade` only fades
+ * (used for the full-bleed backdrop).
+ */
+.enter {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 0.7s ease,
+    transform 0.85s cubic-bezier(0.16, 0.84, 0.3, 1);
+  will-change: opacity, transform;
 }
-
-@keyframes rise {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+.enter-fade {
+  opacity: 0;
+  transition: opacity 1s ease;
+  will-change: opacity;
+}
+.is-entered .enter,
+.is-entered .enter-fade {
+  opacity: 1;
+  transform: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .status-dot,
-  .rise {
+  .status-dot {
     animation: none !important;
+  }
+  /* No staged motion — show everything immediately. */
+  .enter,
+  .enter-fade {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
   }
 }

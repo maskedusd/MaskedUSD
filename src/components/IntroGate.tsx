@@ -1,38 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Hero from "./Hero";
 import IntroTerminal from "./IntroTerminal";
 
 /* ── CONFIG ───────────────────────────────────────────────────────────────
  * SHOW_INTRO controls whether the terminal boot plays.
  *  - true  → plays on every mount / refresh (current behaviour).
- *  - false → skip entirely, land straight on the page.
- * To make it once-per-session instead of every refresh, swap the initial
- * state below for a sessionStorage check (commented example included).
+ *  - false → skip the terminal; the hero just loads in on its own.
+ * To make it once-per-session instead of every refresh, gate `introActive`
+ * with a sessionStorage check (and set the flag in onDone).
  * ───────────────────────────────────────────────────────────────────────── */
 const SHOW_INTRO = true;
 
 /**
- * Wraps the page so the terminal intro overlays the (already-mounted) hero and
- * hands off to it. `introActive` initializes to its final value during the
- * first render — including SSR — so the overlay is part of the initial HTML and
- * the hero never flashes before the intro appears.
+ * Coordinates the intro → landing handoff. The hero is always mounted (and is
+ * in the SSR markup) but starts hidden; when the terminal begins its exit it
+ * fires `onExitStart`, which flips `heroEntered` so the hero load-in animation
+ * plays as the terminal dissolves. With no intro, the hero loads in on its own.
  */
-export default function IntroGate({ children }: { children: React.ReactNode }) {
+export default function IntroGate() {
   const [introActive, setIntroActive] = useState(SHOW_INTRO);
+  const [heroEntered, setHeroEntered] = useState(false);
 
-  // Once-per-session alternative (replace the line above):
-  // const [introActive, setIntroActive] = useState(() => {
-  //   if (!SHOW_INTRO || typeof window === "undefined") return SHOW_INTRO;
-  //   return sessionStorage.getItem("musd:intro-seen") !== "1";
-  // });
-  // ...and in onDone: sessionStorage.setItem("musd:intro-seen", "1");
+  // No intro → still play the hero load-in on first paint.
+  useEffect(() => {
+    if (SHOW_INTRO) return;
+    const id = requestAnimationFrame(() => setHeroEntered(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
 
   return (
     <>
-      {children}
+      <Hero entered={heroEntered} />
       {introActive && (
-        <IntroTerminal onDone={() => setIntroActive(false)} />
+        <IntroTerminal
+          onExitStart={() => setHeroEntered(true)}
+          onDone={() => setIntroActive(false)}
+        />
       )}
     </>
   );
