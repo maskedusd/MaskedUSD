@@ -84,14 +84,14 @@ const SCRIPT: Line[] = [
  * Tune the whole feel here. Total typing stays roughly ~1.9–2.4s.
  */
 const TIMING = {
-  startDelay: 200, // beat before the first character types
-  charDelay: 15, // per-character typewriter speed (input lines)
-  printDelay: 130, // beat before a printed output line appears
-  betweenLines: 150, // gap after one line completes, before the next begins
-  hold: 400, // dwell on the finished terminal before exiting
-  exit: 580, // fade + scale-out duration
-  reducedHold: 480, // dwell when prefers-reduced-motion (no typing)
-  failsafe: 6000, // hard cap → always call onDone(), even if something stalls
+  startDelay: 260, // beat before the first character types
+  charDelay: 24, // per-character typewriter speed (input lines)
+  printDelay: 180, // beat before a printed output line appears
+  betweenLines: 210, // gap after one line completes, before the next begins
+  hold: 600, // dwell on the finished terminal before exiting
+  exit: 680, // fade + scale-out duration
+  reducedHold: 620, // dwell when prefers-reduced-motion (no typing)
+  failsafe: 7000, // hard cap → always call onDone(), even if something stalls
 } as const;
 
 /* ── STYLES · COLOURS (tasteful, not rainbow) ─────────────────────────────── */
@@ -325,9 +325,10 @@ export default function IntroTerminal({ onDone }: { onDone: () => void }) {
         alignItems: "center",
         justifyContent: "center",
         padding: "1.25rem",
-        // Matches the hero's pale-lavender background so the handoff is seamless.
+        // Dark purplish-black "boot screen". On exit it fades to reveal the
+        // light lavender hero underneath — an intentional dark→light handoff.
         background:
-          "radial-gradient(120% 100% at 50% 18%, #faf7ff 0%, #f6f2fb 52%, #efe7f7 100%)",
+          "radial-gradient(120% 100% at 50% 40%, #161127 0%, #0d0a18 55%, #080610 100%)",
         opacity: exiting ? 0 : 1,
         transition: `opacity ${TIMING.exit}ms cubic-bezier(0.4, 0, 0.2, 1)`,
         pointerEvents: exiting ? "none" : "auto",
@@ -346,10 +347,10 @@ export default function IntroTerminal({ onDone }: { onDone: () => void }) {
           width: "min(560px, 100%)",
           borderRadius: 14,
           overflow: "hidden",
-          background: "#15121f",
-          border: "1px solid rgba(184,164,255,0.16)",
+          background: "#1c1731",
+          border: "1px solid rgba(184,164,255,0.22)",
           boxShadow:
-            "0 30px 80px -28px rgba(27,20,56,0.45), 0 2px 10px -4px rgba(27,20,56,0.28), inset 0 1px 0 rgba(255,255,255,0.04)",
+            "0 40px 100px -30px rgba(123,79,207,0.5), 0 0 60px -20px rgba(139,111,224,0.35), inset 0 1px 0 rgba(255,255,255,0.05)",
           transform: exiting
             ? "translateY(-6px) scale(0.985)"
             : "translateY(0) scale(1)",
@@ -366,7 +367,7 @@ export default function IntroTerminal({ onDone }: { onDone: () => void }) {
             gap: 8,
             height: 38,
             padding: "0 14px",
-            background: "#1e1a2b",
+            background: "#251e3a",
             borderBottom: "1px solid rgba(255,255,255,0.06)",
           }}
         >
