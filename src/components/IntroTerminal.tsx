@@ -10,12 +10,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
  * landing page. Closer to a refined splash than a full terminal dump —
  * "polished" over "techy", the quickest path to the hero.
  *
- * HONESTY (pre-launch): the boot initializes the INTERFACE, not the protocol.
- * Lines state DESIGN facts only (chain = Base, 1:1 native USDC, dZK Proof) and
- * the status line reads "pre-launch · nothing live yet". Nothing claims that
- * contracts / the shielded pool / yield are deployed or operational. (The
- * leading mark on the facts line is a muted lavender check, not success-green,
- * so it reads as "confirmed design", not "operational".)
+ * COPY: the boot initializes the INTERFACE and states brand/design facts only
+ * (chain = Base, 1:1 native USDC, $USDM shielded by dZK Proof, "private by
+ * default"). It carries no launch-status claim, so it reads well whether shown
+ * before or after launch. The leading mark on the facts line is a muted
+ * lavender check (not success-green) to stay on-brand.
  *
  * Self-contained: React + Tailwind + inline styles only. No external deps, no
  * audio. prefers-reduced-motion and a hard failsafe are both honored.
@@ -69,9 +68,7 @@ const SCRIPT: Line[] = [
     kind: "print",
     tokens: [
       { text: "› ", role: "comment" },
-      { text: "status ", role: "out" },
-      { text: "pre-launch", role: "flag" },
-      { text: " · nothing live yet", role: "comment" },
+      { text: "private by default", role: "accent" },
     ],
   },
   {
@@ -264,14 +261,14 @@ export default function IntroTerminal({ onDone }: { onDone: () => void }) {
     if (line.kind === "print") {
       // Reserve vertical space so later lines don't pop the layout.
       if (shown < 1) {
-        return <div key={index} style={{ minHeight: "1.6em" }} aria-hidden />;
+        return <div key={index} style={{ minHeight: "1.65em" }} aria-hidden />;
       }
       return (
         <div
           key={index}
           aria-hidden
           style={{
-            minHeight: "1.6em",
+            minHeight: "1.65em",
             whiteSpace: "pre-wrap",
             wordBreak: "break-word",
           }}
@@ -292,7 +289,7 @@ export default function IntroTerminal({ onDone }: { onDone: () => void }) {
         key={index}
         aria-hidden
         style={{
-          minHeight: "1.6em",
+          minHeight: "1.65em",
           whiteSpace: "pre-wrap",
           wordBreak: "break-word",
         }}
@@ -325,10 +322,11 @@ export default function IntroTerminal({ onDone }: { onDone: () => void }) {
         alignItems: "center",
         justifyContent: "center",
         padding: "1.25rem",
-        // Dark purplish-black "boot screen". On exit it fades to reveal the
-        // light lavender hero underneath — an intentional dark→light handoff.
+        // Near-black "boot screen" with the faintest purple lift. On exit it
+        // fades to reveal the light lavender hero — an intentional dark→light
+        // handoff.
         background:
-          "radial-gradient(120% 100% at 50% 40%, #161127 0%, #0d0a18 55%, #080610 100%)",
+          "radial-gradient(120% 100% at 50% 42%, #0a0712 0%, #050308 55%, #010102 100%)",
         opacity: exiting ? 0 : 1,
         transition: `opacity ${TIMING.exit}ms cubic-bezier(0.4, 0, 0.2, 1)`,
         pointerEvents: exiting ? "none" : "auto",
@@ -344,10 +342,10 @@ export default function IntroTerminal({ onDone }: { onDone: () => void }) {
         aria-hidden="true"
         className="font-mono"
         style={{
-          width: "min(560px, 100%)",
+          width: "min(620px, 100%)",
           borderRadius: 14,
           overflow: "hidden",
-          background: "#1c1731",
+          background: "#15111f",
           border: "1px solid rgba(184,164,255,0.22)",
           boxShadow:
             "0 40px 100px -30px rgba(123,79,207,0.5), 0 0 60px -20px rgba(139,111,224,0.35), inset 0 1px 0 rgba(255,255,255,0.05)",
@@ -365,9 +363,9 @@ export default function IntroTerminal({ onDone }: { onDone: () => void }) {
             display: "flex",
             alignItems: "center",
             gap: 8,
-            height: 38,
-            padding: "0 14px",
-            background: "#251e3a",
+            height: 42,
+            padding: "0 16px",
+            background: "#1d1730",
             borderBottom: "1px solid rgba(255,255,255,0.06)",
           }}
         >
@@ -380,7 +378,7 @@ export default function IntroTerminal({ onDone }: { onDone: () => void }) {
               left: 0,
               right: 0,
               textAlign: "center",
-              fontSize: 12,
+              fontSize: 13,
               letterSpacing: "0.01em",
               color: "#8c86a3",
               pointerEvents: "none",
@@ -393,12 +391,12 @@ export default function IntroTerminal({ onDone }: { onDone: () => void }) {
         {/* Terminal body. */}
         <div
           style={{
-            padding: "16px 18px 18px",
-            fontSize: 13.5,
-            lineHeight: 1.6,
+            padding: "20px 22px 22px",
+            fontSize: 16,
+            lineHeight: 1.65,
             color: COLOR.out,
             // Reserve full height up front so lines reveal without jumping.
-            minHeight: `calc(${SCRIPT.length} * 1.6em + 2px)`,
+            minHeight: `calc(${SCRIPT.length} * 1.65em + 2px)`,
           }}
         >
           {SCRIPT.map((line, i) => renderLine(line, i))}
