@@ -1,8 +1,16 @@
 import GridDistortion from "./GridDistortion";
 import MaskIcon from "./MaskIcon";
+import SmoothScrollLink from "./SmoothScrollLink";
+import { XIcon, TelegramIcon } from "./BrandIcons";
 
 const X_URL = "https://x.com/MaskedUSD";
 const TELEGRAM_URL = "https://t.me/maskedusd";
+
+/** In-page sections wired into the header nav (scrolled to smoothly). */
+const NAV_LINKS = [
+  { id: "how-it-works", label: "How it works" },
+  { id: "tokens", label: "Tokens" },
+];
 
 /**
  * The landing hero. `entered` flips true when the intro terminal hands off; the
@@ -41,7 +49,7 @@ export default function Hero({ entered = true }: { entered?: boolean }) {
           className="enter w-full px-4 pt-5 sm:px-6 sm:pt-6"
           style={{ transitionDelay: "120ms" }}
         >
-          <nav className="glass pointer-events-auto mx-auto flex w-full min-w-0 max-w-5xl items-center justify-between gap-3 rounded-full py-2.5 pl-4 pr-2.5 sm:gap-4 sm:pl-5">
+          <nav className="glass pointer-events-auto relative mx-auto flex w-full min-w-0 max-w-5xl items-center justify-between gap-3 rounded-full py-2.5 pl-4 pr-2.5 sm:gap-4 sm:pl-5">
             <a
               href="/"
               className="flex min-w-0 items-center gap-2.5"
@@ -53,27 +61,53 @@ export default function Hero({ entered = true }: { entered?: boolean }) {
               </span>
             </a>
 
-            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-              <span className="hidden items-center gap-2 rounded-full border border-ink/10 px-3 py-1.5 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-ink-muted sm:inline-flex">
-                <span className="status-dot" aria-hidden="true" />
-                Pre-launch
-              </span>
+            {/* Centered section nav — smooth-scrolls without a /#hash. */}
+            <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 md:flex">
+              {NAV_LINKS.map((link) => (
+                <SmoothScrollLink
+                  key={link.id}
+                  targetId={link.id}
+                  className="rounded-full px-3.5 py-2 text-sm font-medium text-ink-muted transition-colors hover:text-ink"
+                >
+                  {link.label}
+                </SmoothScrollLink>
+              ))}
+            </div>
+
+            <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
               <a
                 href={X_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hidden rounded-full px-3 py-2 font-mono text-xs uppercase tracking-wider text-ink-muted transition-colors hover:text-ink sm:inline-block"
+                aria-label="MaskedUSD on X"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-ink/[0.06] hover:text-ink"
               >
-                X
+                <XIcon size={16} />
               </a>
               <a
                 href={TELEGRAM_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-full bg-ink px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
+                aria-label="MaskedUSD on Telegram"
+                className="mr-1 inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-ink/[0.06] hover:text-ink"
               >
-                Telegram
+                <TelegramIcon size={17} />
               </a>
+              <button
+                type="button"
+                disabled
+                aria-disabled="true"
+                title="Launching soon"
+                className="inline-flex cursor-not-allowed items-center gap-2 rounded-full border border-ink/10 bg-ink/[0.07] px-4 py-2 text-sm font-medium text-ink-dim"
+              >
+                Launch App
+                <span
+                  aria-hidden="true"
+                  className="hidden font-mono text-[0.6rem] uppercase tracking-[0.12em] text-ink-dim/80 sm:inline"
+                >
+                  Soon
+                </span>
+              </button>
             </div>
           </nav>
         </header>
@@ -143,8 +177,8 @@ export default function Hero({ entered = true }: { entered?: boolean }) {
               mirrors the footer's own padding + items-center so the cue aligns
               exactly with the side labels (rather than the footer's box). */}
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-6 pb-5 sm:pb-6">
-            <a
-              href="#how-it-works"
+            <SmoothScrollLink
+              targetId="how-it-works"
               className="pointer-events-auto inline-flex items-center gap-2 text-ink-muted transition-colors hover:text-ink"
               aria-label="Scroll to how it works"
             >
@@ -164,7 +198,7 @@ export default function Hero({ entered = true }: { entered?: boolean }) {
                 <path d="M12 5v14" />
                 <path d="m19 12-7 7-7-7" />
               </svg>
-            </a>
+            </SmoothScrollLink>
           </div>
 
           <span
