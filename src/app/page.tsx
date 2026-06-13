@@ -4,6 +4,7 @@ import WhyPrivacy from "@/components/WhyPrivacy";
 import TokenComparison from "@/components/TokenComparison";
 import Roadmap from "@/components/Roadmap";
 import FAQ from "@/components/FAQ";
+import SupportCTA from "@/components/SupportCTA";
 import Footer from "@/components/Footer";
 
 export default function Home() {
@@ -21,6 +22,8 @@ export default function Home() {
       <Roadmap />
       {/* white */}
       <FAQ />
+      {/* white — compact support CTA card */}
+      <SupportCTA />
       {/* lavender (deeper) — closing band */}
       <Footer />
     </>
