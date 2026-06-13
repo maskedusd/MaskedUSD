@@ -37,14 +37,16 @@
   --font-mono: var(--font-jetbrains);
 }
 
-html,
-body {
-  height: 100%;
-  max-width: 100%;
-  overflow-x: hidden;
+/* Contain stray horizontal overflow (glows, distortion) WITHOUT making the
+   body a fixed-height scroll container. `clip` (unlike `hidden`) does not force
+   overflow-y to `auto`, so the viewport stays the single vertical scroller and
+   the page grows with its content. */
+html {
+  overflow-x: clip;
 }
 
 body {
+  overflow-x: clip;
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
