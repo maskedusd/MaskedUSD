@@ -1,24 +1,12 @@
 import GridDistortion from "./GridDistortion";
-import MaskIcon from "./MaskIcon";
 import SmoothScrollLink from "./SmoothScrollLink";
-import { XIcon, TelegramIcon } from "./BrandIcons";
-
-const X_URL = "https://x.com/MaskedUSD";
-const TELEGRAM_URL = "https://t.me/maskedusd";
-
-/** In-page sections wired into the header nav (scrolled to smoothly). */
-const NAV_LINKS = [
-  { id: "how-it-works", label: "How it works" },
-  { id: "privacy", label: "Privacy" },
-  { id: "tokens", label: "Tokens" },
-  { id: "roadmap", label: "Roadmap" },
-  { id: "faq", label: "FAQ" },
-];
 
 /**
- * The landing hero. `entered` flips true when the intro terminal hands off; the
- * `is-entered` class then eases each `.enter` / `.enter-fade` element in, with
- * per-element transition-delays for a staggered "load in".
+ * The landing hero. The site header is a separate fixed overlay (see
+ * SiteHeader); the hero itself is the backdrop + headline + CTAs + footer cue.
+ * `entered` flips true when the intro terminal hands off; the `is-entered`
+ * class then eases each `.enter` / `.enter-fade` element in, with per-element
+ * transition-delays for a staggered "load in".
  */
 export default function Hero({ entered = true }: { entered?: boolean }) {
   return (
@@ -47,69 +35,7 @@ export default function Hero({ entered = true }: { entered?: boolean }) {
       {/* Layer 2 — content. Wrappers stay pointer-events-none so the cursor
           reaches the canvas; only the interactive controls opt back in. */}
       <div className="pointer-events-none relative z-20 flex min-h-screen flex-col">
-        {/* Nav */}
-        <header
-          className="enter w-full px-4 pt-4 sm:px-6 sm:pt-4"
-          style={{ transitionDelay: "120ms" }}
-        >
-          <nav className="glass pointer-events-auto relative mx-auto flex w-full min-w-0 max-w-5xl items-center justify-between gap-3 rounded-full py-1.5 pl-3.5 pr-1.5 sm:gap-4 sm:pl-4">
-            <a
-              href="/"
-              className="flex min-w-0 items-center gap-2"
-              aria-label="MaskedUSD home"
-            >
-              <MaskIcon width={26} className="shrink-0" />
-              <span className="truncate font-display text-sm font-semibold tracking-tight text-ink sm:text-base">
-                MaskedUSD
-              </span>
-            </a>
-
-            {/* Centered section nav — smooth-scrolls without a /#hash. */}
-            <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-0.5 md:flex">
-              {NAV_LINKS.map((link) => (
-                <SmoothScrollLink
-                  key={link.id}
-                  targetId={link.id}
-                  className="rounded-full px-2.5 py-1.5 text-[0.8rem] font-medium text-ink-muted transition-colors hover:text-ink"
-                >
-                  {link.label}
-                </SmoothScrollLink>
-              ))}
-            </div>
-
-            <div className="flex shrink-0 items-center gap-0.5">
-              <a
-                href={X_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="MaskedUSD on X"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-ink/[0.06] hover:text-ink"
-              >
-                <XIcon size={15} />
-              </a>
-              <a
-                href={TELEGRAM_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="MaskedUSD on Telegram"
-                className="mr-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-ink/[0.06] hover:text-ink"
-              >
-                <TelegramIcon size={16} />
-              </a>
-              <button
-                type="button"
-                disabled
-                aria-disabled="true"
-                title="Launching soon"
-                className="inline-flex cursor-not-allowed items-center rounded-full border border-ink/10 bg-ink/[0.07] px-3.5 py-1.5 text-[0.82rem] font-medium text-ink-dim"
-              >
-                Launch App
-              </button>
-            </div>
-          </nav>
-        </header>
-
-        {/* Hero body */}
+        {/* Hero body (the site header is a separate fixed overlay) */}
         <div className="flex flex-1 items-center justify-center px-5 py-16">
           <div className="mx-auto max-w-2xl text-center">
             <span
@@ -142,22 +68,20 @@ export default function Hero({ entered = true }: { entered?: boolean }) {
               className="enter mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row"
               style={{ transitionDelay: "660ms" }}
             >
-              <a
-                href={TELEGRAM_URL}
-                target="_blank"
-                rel="noopener noreferrer"
+              {/* Primary CTA — the future "Launch App"; inert until launch. */}
+              <button
+                type="button"
                 className="pointer-events-auto inline-flex w-full items-center justify-center rounded-full bg-ink px-6 py-3 text-sm font-medium text-white shadow-[0_10px_28px_-12px_rgba(27,20,56,0.5)] transition-transform hover:-translate-y-0.5 sm:w-auto"
               >
-                Join the community
-              </a>
-              <a
-                href={X_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="glass pointer-events-auto inline-flex w-full items-center justify-center rounded-full px-6 py-3 text-sm font-medium text-ink transition-colors hover:border-accent sm:w-auto"
+                Launch App
+              </button>
+              {/* Secondary CTA — scrolls down to the Tokens section; grows on hover. */}
+              <SmoothScrollLink
+                targetId="tokens"
+                className="glass pointer-events-auto inline-flex w-full items-center justify-center rounded-full px-6 py-3 text-sm font-medium text-ink transition-transform duration-200 hover:scale-[1.06] hover:border-accent sm:w-auto"
               >
-                Follow @MaskedUSD
-              </a>
+                Contract Address
+              </SmoothScrollLink>
             </div>
           </div>
         </div>

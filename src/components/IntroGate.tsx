@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Hero from "./Hero";
 import IntroTerminal from "./IntroTerminal";
+import SiteHeader from "./SiteHeader";
 
 /* ── CONFIG ───────────────────────────────────────────────────────────────
  * SHOW_INTRO controls whether the terminal boot plays.
@@ -32,6 +33,7 @@ export default function IntroGate() {
 
   return (
     <>
+      <SiteHeader entered={heroEntered} />
       <Hero entered={heroEntered} />
       {introActive && (
         <IntroTerminal

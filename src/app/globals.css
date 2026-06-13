@@ -44,6 +44,8 @@
 html {
   overflow-x: clip;
   scroll-behavior: smooth;
+  /* Keep anchored scroll targets clear of the fixed site header. */
+  scroll-padding-top: 5rem;
 }
 
 body {
