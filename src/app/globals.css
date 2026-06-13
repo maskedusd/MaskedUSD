@@ -44,8 +44,11 @@
 html {
   overflow-x: clip;
   scroll-behavior: smooth;
-  /* Keep anchored scroll targets clear of the fixed site header. */
-  scroll-padding-top: 5rem;
+  /* Land in-page targets flush at the very top. The header is a floating pill
+     (transparent surround), so any gap above the target would reveal the tail
+     of the previous section ("two sections" look). Each section carries its own
+     generous top padding (≈6rem+), which clears the floating header. */
+  scroll-padding-top: 0;
 }
 
 body {
