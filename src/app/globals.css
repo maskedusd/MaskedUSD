@@ -30,6 +30,7 @@
   --color-ink-dim: var(--ink-dim);
   --color-accent: var(--accent);
   --color-accent-deep: var(--accent-deep);
+  --color-accent-soft: var(--accent-soft);
 
   --font-display: var(--font-space-grotesk);
   --font-sans: var(--font-inter);
