@@ -19,7 +19,7 @@ const HEADING_EASE: [number, number, number, number] = [0.16, 0.84, 0.3, 1];
 
 export default function HowItWorks() {
   return (
-    <div className="relative w-full bg-bg">
+    <div className="relative w-full bg-surface">
       {/* Section header */}
       <div className="mx-auto w-full max-w-[1180px] px-5 pt-24 sm:px-6 md:pt-32">
         <motion.div

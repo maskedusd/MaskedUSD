@@ -168,7 +168,7 @@ export default function SectionWithMockup({
                 whileInView={{ opacity: 1, y: floatShift }}
                 viewport={{ once: true, amount: 0.25 }}
                 transition={{ duration: reduceMotion ? 0 : 1, ease: EASE_OUT }}
-                className="relative aspect-[472/637] w-full overflow-hidden rounded-[28px] border border-ink/10 bg-surface/70 p-2.5 backdrop-blur-[15px]"
+                className="relative aspect-[472/637] w-full overflow-hidden rounded-[28px] border border-ink/15 bg-surface/90 p-2.5 backdrop-blur-[15px]"
                 style={{
                   boxShadow:
                     "0 50px 110px -50px rgba(107,79,207,0.5), 0 12px 36px -22px rgba(27,20,56,0.18)",
