@@ -2,6 +2,9 @@
 
 import { motion } from "framer-motion";
 import SectionWithMockup from "./SectionWithMockup";
+import DepositMockup from "./mockups/DepositMockup";
+import ShieldMockup from "./mockups/ShieldMockup";
+import RedeemMockup from "./mockups/RedeemMockup";
 
 /**
  * "How it works" — the section directly under the hero. A short section header
@@ -54,8 +57,7 @@ export default function HowItWorks() {
           </>
         }
         description="Send native USDC on Base and receive $USDM 1:1. Your dollars stay fully backed — one $USDM for every USDC held in reserve."
-        primaryImageSrc="/howitworks/deposit.png"
-        primaryImageAlt="MaskedUSD deposit screen: 1,000 USDC on Base mints 1,000 $USDM, backed 1:1, with no network fee shown."
+        mockup={<DepositMockup />}
         secondaryImageSrc="/howitworks/card.png"
       />
 
@@ -70,8 +72,7 @@ export default function HowItWorks() {
           </>
         }
         description="Once minted, your $USDM balance and transfers are shielded by dZK (delegated zero-knowledge) Proof. Private by default — amounts and counterparties stay off the public ledger, while the math still proves every transfer is valid."
-        primaryImageSrc="/howitworks/shield.png"
-        primaryImageAlt="MaskedUSD shielded balance screen: the $USDM balance and recent transfers are masked, hidden by dZK Proof and private by default."
+        mockup={<ShieldMockup />}
         secondaryImageSrc="/howitworks/card.png"
         reverseLayout
       />
@@ -87,8 +88,7 @@ export default function HowItWorks() {
           </>
         }
         description="Burn $USDM and withdraw native USDC 1:1, minus fees, whenever you want. No lockups, no waiting on permission — your exit is always open."
-        primaryImageSrc="/howitworks/redeem.png"
-        primaryImageAlt="MaskedUSD redeem screen: 500 $USDM redeems to native USDC on Base 1:1 minus fees, with no lockups."
+        mockup={<RedeemMockup />}
         secondaryImageSrc="/howitworks/card.png"
       />
     </div>

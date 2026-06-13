@@ -9,10 +9,13 @@ export interface SectionWithMockupProps {
   title: ReactNode;
   /** Supporting copy under the title (ink-muted). */
   description: ReactNode;
-  /** Foreground app-screen mockup (portrait, ~471x637). */
-  primaryImageSrc: string;
+  /** Foreground app-screen mockup image (portrait, ~471x637). Optional when
+   *  an interactive `mockup` node is supplied instead. */
+  primaryImageSrc?: string;
   /** Descriptive alt for the primary mockup (it carries the step's mechanism). */
-  primaryImageAlt: string;
+  primaryImageAlt?: string;
+  /** Live, interactive mockup node — rendered in place of the image when set. */
+  mockup?: ReactNode;
   /** Decorative offset card image sitting behind the primary. */
   secondaryImageSrc: string;
   /** Optional small mono tag above the title, e.g. "STEP 01". */
@@ -45,6 +48,7 @@ export default function SectionWithMockup({
   description,
   primaryImageSrc,
   primaryImageAlt,
+  mockup,
   secondaryImageSrc,
   stepLabel,
   reverseLayout = false,
@@ -168,20 +172,28 @@ export default function SectionWithMockup({
                 whileInView={{ opacity: 1, y: floatShift }}
                 viewport={{ once: true, amount: 0.25 }}
                 transition={{ duration: reduceMotion ? 0 : 1, ease: EASE_OUT }}
-                className="relative aspect-[472/637] w-full overflow-hidden rounded-[28px] border border-ink/15 bg-surface/90 p-2.5 backdrop-blur-[15px]"
+                className={`relative w-full overflow-hidden rounded-[28px] border border-ink/15 bg-surface/90 p-2.5 backdrop-blur-[15px] ${
+                  mockup ? "" : "aspect-[472/637]"
+                }`}
                 style={{
                   boxShadow:
                     "0 50px 110px -50px rgba(107,79,207,0.5), 0 12px 36px -22px rgba(27,20,56,0.18)",
                 }}
               >
-                <div className="relative h-full w-full overflow-hidden rounded-[20px] bg-bg-wash">
-                  <Image
-                    src={primaryImageSrc}
-                    alt={primaryImageAlt}
-                    fill
-                    sizes="(max-width: 768px) 92vw, 460px"
-                    className="object-cover"
-                  />
+                <div
+                  className={`relative overflow-hidden rounded-[20px] ${
+                    mockup ? "" : "h-full w-full bg-bg-wash"
+                  }`}
+                >
+                  {mockup ?? (
+                    <Image
+                      src={primaryImageSrc as string}
+                      alt={primaryImageAlt ?? ""}
+                      fill
+                      sizes="(max-width: 768px) 92vw, 460px"
+                      className="object-cover"
+                    />
+                  )}
                 </div>
               </motion.div>
             </div>
