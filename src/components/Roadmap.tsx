@@ -156,8 +156,11 @@ export default function Roadmap() {
                   />
                 </span>
 
-                {/* Card */}
-                <div className="rounded-3xl border border-ink/[0.08] bg-surface/70 p-6 shadow-[0_24px_60px_-46px_rgba(107,79,207,0.5)] backdrop-blur-[8px] sm:p-7">
+                {/* Card — lifts & brightens on hover */}
+                <motion.div
+                  whileHover={reduceMotion ? undefined : { y: -4, scale: 1.012 }}
+                  transition={{ type: "spring", stiffness: 340, damping: 26 }}
+                  className="rounded-3xl border border-ink/[0.08] bg-surface/70 p-6 shadow-[0_24px_60px_-46px_rgba(107,79,207,0.5)] backdrop-blur-[8px] transition-[box-shadow,border-color] duration-300 hover:border-accent/25 hover:shadow-[0_38px_84px_-44px_rgba(107,79,207,0.62)] sm:p-7">
                   <div className="flex items-center gap-3">
                     <span className="font-mono text-sm font-medium text-accent-deep">
                       {phase.no}
@@ -178,7 +181,7 @@ export default function Roadmap() {
                   <p className="mt-2 max-w-lg text-[0.95rem] leading-relaxed text-ink-muted">
                     {phase.body}
                   </p>
-                </div>
+                </motion.div>
               </motion.div>
             ))}
           </div>

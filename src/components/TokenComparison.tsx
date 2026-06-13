@@ -1,7 +1,38 @@
 "use client";
 
+import {
+  useState,
+  type Dispatch,
+  type ReactNode,
+  type SetStateAction,
+} from "react";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 import MaskIcon from "./MaskIcon";
+
+type TokenId = "usdm" | "musd";
+
+/* ── Contract address placeholder ──────────────────────────────────────────
+ * Real Base contract addresses get dropped in here once each token is live;
+ * for now a clearly-pending "TBA" slot (dashed = placeholder). When the
+ * address exists, swap "TBA" for it, make the border solid, and add a
+ * copy-to-clipboard button. */
+function ContractField({ align = "left" }: { align?: "left" | "right" }) {
+  return (
+    <div
+      className={`flex flex-col gap-1.5 ${
+        align === "right" ? "items-end" : "items-start"
+      }`}
+    >
+      <span className="font-mono text-[0.56rem] uppercase tracking-[0.18em] text-ink-dim">
+        Contract · Base
+      </span>
+      <span className="inline-flex items-center gap-2 rounded-lg border border-dashed border-ink/20 bg-surface/60 px-3 py-1.5 font-mono text-[0.72rem] tracking-wider text-ink-muted">
+        <span className="text-ink-dim/60">0x</span>
+        TBA
+      </span>
+    </div>
+  );
+}
 
 /**
  * TokenComparison — "Two tokens, one protocol."
@@ -68,9 +99,12 @@ function UsdmPanel() {
         ))}
       </ul>
 
-      <span className="mt-auto inline-flex w-fit items-center gap-2 rounded-full border border-ink/10 bg-surface/70 px-3 py-1.5 font-mono text-[0.6rem] uppercase tracking-[0.14em] text-ink-dim">
-        Backed &middot; Shielded &middot; Redeemable
-      </span>
+      <div className="mt-auto flex flex-col gap-4 pt-7">
+        <ContractField align="left" />
+        <span className="inline-flex w-fit items-center gap-2 rounded-full border border-ink/10 bg-surface/70 px-3 py-1.5 font-mono text-[0.6rem] uppercase tracking-[0.14em] text-ink-dim">
+          Backed &middot; Shielded &middot; Redeemable
+        </span>
+      </div>
     </article>
   );
 }
@@ -121,15 +155,64 @@ function MusdPanel() {
         ))}
       </ul>
 
-      <span className="mt-auto inline-flex w-fit items-center gap-2 rounded-full border border-accent/25 bg-accent-soft px-3 py-1.5 font-mono text-[0.6rem] uppercase tracking-[0.14em] text-accent-deep">
-        Planned utility
-      </span>
+      <div className="mt-auto flex flex-col items-end gap-4 pt-7">
+        <ContractField align="right" />
+        <span className="inline-flex w-fit items-center gap-2 rounded-full border border-accent/25 bg-accent-soft px-3 py-1.5 font-mono text-[0.6rem] uppercase tracking-[0.14em] text-accent-deep">
+          Planned utility
+        </span>
+      </div>
     </article>
   );
 }
 
+/* ── md+ card shell that enlarges / prioritizes on hover ───────────────────── */
+
+function TokenCard({
+  id,
+  hovered,
+  setHovered,
+  reduceMotion,
+  className,
+  children,
+}: {
+  id: TokenId;
+  hovered: TokenId | null;
+  setHovered: Dispatch<SetStateAction<TokenId | null>>;
+  reduceMotion: boolean;
+  className: string;
+  children: ReactNode;
+}) {
+  const isHover = hovered === id;
+  const otherHover = hovered !== null && hovered !== id;
+  return (
+    <motion.div
+      onHoverStart={() => setHovered(id)}
+      onHoverEnd={() => setHovered((cur) => (cur === id ? null : cur))}
+      animate={
+        reduceMotion
+          ? undefined
+          : {
+              scale: isHover ? 1.04 : otherHover ? 0.975 : 1,
+              y: isHover ? -8 : 0,
+              opacity: otherHover ? 0.72 : 1,
+            }
+      }
+      transition={{ type: "spring", stiffness: 320, damping: 28 }}
+      style={{ zIndex: isHover ? 2 : 1 }}
+      className={`relative overflow-hidden rounded-[28px] border transition-shadow duration-300 ${className} ${
+        isHover
+          ? "shadow-[0_55px_130px_-42px_rgba(107,79,207,0.62)]"
+          : "shadow-[0_30px_80px_-55px_rgba(107,79,207,0.5)]"
+      }`}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
 export default function TokenComparison() {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useReducedMotion() ?? false;
+  const [hovered, setHovered] = useState<TokenId | null>(null);
 
   const reveal: Variants = {
     hidden: { opacity: 0, y: reduceMotion ? 0 : 20 },
@@ -194,25 +277,32 @@ export default function TokenComparison() {
           </div>
         </motion.div>
 
-        {/* ── md+ : static side-by-side, one frame split by a center divider ─ */}
+        {/* ── md+ : two side-by-side cards that enlarge / prioritize on hover ─ */}
         <motion.div
           variants={reveal}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.2 }}
-          className="relative mt-14 hidden grid-cols-2 items-stretch overflow-hidden rounded-[28px] border border-ink/10 shadow-[0_50px_120px_-60px_rgba(107,79,207,0.5)] md:grid"
+          className="mt-14 hidden grid-cols-2 items-stretch gap-4 md:grid lg:gap-5"
         >
-          <div className="bg-gradient-to-br from-surface to-bg-wash">
+          <TokenCard
+            id="usdm"
+            hovered={hovered}
+            setHovered={setHovered}
+            reduceMotion={reduceMotion}
+            className="border-ink/10 bg-gradient-to-br from-surface to-bg-wash"
+          >
             <UsdmPanel />
-          </div>
-          <div className="bg-gradient-to-bl from-bg-wash to-[#e2d4f3]">
+          </TokenCard>
+          <TokenCard
+            id="musd"
+            hovered={hovered}
+            setHovered={setHovered}
+            reduceMotion={reduceMotion}
+            className="border-accent/20 bg-gradient-to-bl from-bg-wash to-[#e2d4f3]"
+          >
             <MusdPanel />
-          </div>
-          {/* Center divider between the two halves. */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-gradient-to-b from-accent/15 via-accent-deep/40 to-accent/15"
-          />
+          </TokenCard>
         </motion.div>
 
         {/* Connective line — restates the thesis. */}
