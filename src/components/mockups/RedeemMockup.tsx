@@ -106,10 +106,11 @@ export default function RedeemMockup() {
             type="button"
             onClick={() => setSwapped((s) => !s)}
             animate={{ rotate: swapped ? 180 : 0 }}
-            whileTap={reduce ? undefined : { scale: 0.88 }}
+            whileHover={reduce ? undefined : { scale: 1.18 }}
+            whileTap={reduce ? undefined : { scale: 0.9 }}
             transition={{ type: "spring", stiffness: 400, damping: 22 }}
             aria-label="Swap tokens"
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-ink/10 bg-white text-accent-deep shadow-[0_10px_24px_-10px_rgba(107,79,207,0.6)]"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-ink/10 bg-white text-accent-deep shadow-[0_10px_24px_-10px_rgba(107,79,207,0.6)] hover:shadow-[0_14px_30px_-10px_rgba(107,79,207,0.7)]"
           >
             <ArrowDown size={16} strokeWidth={2.4} />
           </motion.button>
