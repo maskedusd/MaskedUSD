@@ -143,7 +143,7 @@ export default function TokenComparison() {
   return (
     <section
       id="tokens"
-      className="relative w-full overflow-hidden bg-bg py-24 md:py-32"
+      className="relative w-full overflow-hidden bg-surface py-24 md:py-32"
     >
       {/* Soft centred lavender glow tying the two sides together. */}
       <div

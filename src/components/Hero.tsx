@@ -9,7 +9,10 @@ const TELEGRAM_URL = "https://t.me/maskedusd";
 /** In-page sections wired into the header nav (scrolled to smoothly). */
 const NAV_LINKS = [
   { id: "how-it-works", label: "How it works" },
+  { id: "privacy", label: "Privacy" },
   { id: "tokens", label: "Tokens" },
+  { id: "roadmap", label: "Roadmap" },
+  { id: "faq", label: "FAQ" },
 ];
 
 /**
@@ -46,67 +49,61 @@ export default function Hero({ entered = true }: { entered?: boolean }) {
       <div className="pointer-events-none relative z-20 flex min-h-screen flex-col">
         {/* Nav */}
         <header
-          className="enter w-full px-4 pt-5 sm:px-6 sm:pt-6"
+          className="enter w-full px-4 pt-4 sm:px-6 sm:pt-4"
           style={{ transitionDelay: "120ms" }}
         >
-          <nav className="glass pointer-events-auto relative mx-auto flex w-full min-w-0 max-w-5xl items-center justify-between gap-3 rounded-full py-2.5 pl-4 pr-2.5 sm:gap-4 sm:pl-5">
+          <nav className="glass pointer-events-auto relative mx-auto flex w-full min-w-0 max-w-5xl items-center justify-between gap-3 rounded-full py-1.5 pl-3.5 pr-1.5 sm:gap-4 sm:pl-4">
             <a
               href="/"
-              className="flex min-w-0 items-center gap-2.5"
+              className="flex min-w-0 items-center gap-2"
               aria-label="MaskedUSD home"
             >
-              <MaskIcon width={34} className="shrink-0" />
-              <span className="truncate font-display text-base font-semibold tracking-tight text-ink sm:text-lg">
+              <MaskIcon width={26} className="shrink-0" />
+              <span className="truncate font-display text-sm font-semibold tracking-tight text-ink sm:text-base">
                 MaskedUSD
               </span>
             </a>
 
             {/* Centered section nav — smooth-scrolls without a /#hash. */}
-            <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 md:flex">
+            <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-0.5 md:flex">
               {NAV_LINKS.map((link) => (
                 <SmoothScrollLink
                   key={link.id}
                   targetId={link.id}
-                  className="rounded-full px-3.5 py-2 text-sm font-medium text-ink-muted transition-colors hover:text-ink"
+                  className="rounded-full px-2.5 py-1.5 text-[0.8rem] font-medium text-ink-muted transition-colors hover:text-ink"
                 >
                   {link.label}
                 </SmoothScrollLink>
               ))}
             </div>
 
-            <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
+            <div className="flex shrink-0 items-center gap-0.5">
               <a
                 href={X_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="MaskedUSD on X"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-ink/[0.06] hover:text-ink"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-ink/[0.06] hover:text-ink"
               >
-                <XIcon size={16} />
+                <XIcon size={15} />
               </a>
               <a
                 href={TELEGRAM_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="MaskedUSD on Telegram"
-                className="mr-1 inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-ink/[0.06] hover:text-ink"
+                className="mr-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-ink/[0.06] hover:text-ink"
               >
-                <TelegramIcon size={17} />
+                <TelegramIcon size={16} />
               </a>
               <button
                 type="button"
                 disabled
                 aria-disabled="true"
                 title="Launching soon"
-                className="inline-flex cursor-not-allowed items-center gap-2 rounded-full border border-ink/10 bg-ink/[0.07] px-4 py-2 text-sm font-medium text-ink-dim"
+                className="inline-flex cursor-not-allowed items-center rounded-full border border-ink/10 bg-ink/[0.07] px-3.5 py-1.5 text-[0.82rem] font-medium text-ink-dim"
               >
                 Launch App
-                <span
-                  aria-hidden="true"
-                  className="hidden font-mono text-[0.6rem] uppercase tracking-[0.12em] text-ink-dim/80 sm:inline"
-                >
-                  Soon
-                </span>
               </button>
             </div>
           </nav>

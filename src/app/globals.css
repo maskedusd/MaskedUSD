@@ -99,6 +99,39 @@ body {
   50% { transform: translateY(3px); opacity: 1; }
 }
 
+/* Soft diagonal sheen that sweeps across a surface (the dZK ledger card). */
+.sheen {
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    transparent 35%,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent 65%,
+    transparent 100%
+  );
+  background-size: 250% 250%;
+  animation: sheen-sweep 4.5s ease-in-out infinite;
+}
+
+@keyframes sheen-sweep {
+  0% { background-position: 140% 0; }
+  55%, 100% { background-position: -40% 0; }
+}
+
+/* Vertical scan line implying the proof being checked. */
+@keyframes proof-scan {
+  0% { transform: translateY(-10%); opacity: 0; }
+  12% { opacity: 1; }
+  88% { opacity: 1; }
+  100% { transform: translateY(1100%); opacity: 0; }
+}
+
+/* Gentle float for layered cards. */
+@keyframes soft-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+
 /* ── Landing entrance ──────────────────────────────────────────────────────
  * Elements begin hidden and ease in once an ancestor gets `.is-entered`
  * (toggled when the intro terminal hands off). Each item staggers via an
@@ -129,8 +162,14 @@ body {
     scroll-behavior: auto;
   }
   .status-dot,
-  .scroll-arrow {
+  .scroll-arrow,
+  .sheen,
+  .proof-scan,
+  .soft-float {
     animation: none !important;
+  }
+  .sheen {
+    background: none !important;
   }
   /* No staged motion — show everything immediately. */
   .enter,
