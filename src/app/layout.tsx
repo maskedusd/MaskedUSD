@@ -25,7 +25,11 @@ const description =
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://maskedusd.com"),
-  title: "MaskedUSD — Privacy stablecoin infrastructure on Base",
+  // Landing page → "MaskedUSD"; other pages → "MaskedUSD // <Page>".
+  title: {
+    default: "MaskedUSD",
+    template: "MaskedUSD // %s",
+  },
   description,
   openGraph: {
     title: "MaskedUSD",

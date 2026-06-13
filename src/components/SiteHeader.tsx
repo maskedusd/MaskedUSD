@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
+import { usePathname } from "next/navigation";
 import {
   motion,
   useMotionValueEvent,
@@ -39,6 +40,7 @@ const EASE_OUT: [number, number, number, number] = [0.16, 0.84, 0.3, 1];
  */
 export default function SiteHeader({ entered = false }: { entered?: boolean }) {
   const reduceMotion = useReducedMotion();
+  const pathname = usePathname();
   const { scrollY } = useScroll();
   const maxWidth = useTransform(scrollY, [0, 200], [1024, 780], { clamp: true });
   const [scrolled, setScrolled] = useState(false);
@@ -47,6 +49,19 @@ export default function SiteHeader({ entered = false }: { entered?: boolean }) {
     const next = v > 24;
     setScrolled((prev) => (prev === next ? prev : next));
   });
+
+  // On the landing page, the logo scrolls to the top instead of reloading;
+  // anywhere else (e.g. /support) it navigates home as usual.
+  const handleLogo = (e: MouseEvent<HTMLAnchorElement>) => {
+    if (pathname !== "/") return;
+    e.preventDefault();
+    window.scrollTo({
+      top: 0,
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+    });
+  };
 
   return (
     <motion.header
@@ -63,6 +78,7 @@ export default function SiteHeader({ entered = false }: { entered?: boolean }) {
       >
         <a
           href="/"
+          onClick={handleLogo}
           className="flex min-w-0 items-center gap-2"
           aria-label="MaskedUSD home"
         >
