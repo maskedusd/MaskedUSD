@@ -4,6 +4,7 @@ import WhyPrivacy from "@/components/WhyPrivacy";
 import TokenComparison from "@/components/TokenComparison";
 import Roadmap from "@/components/Roadmap";
 import FAQ from "@/components/FAQ";
+import Footer from "@/components/Footer";
 
 export default function Home() {
   return (
@@ -20,6 +21,8 @@ export default function Home() {
       <Roadmap />
       {/* white */}
       <FAQ />
+      {/* lavender (deeper) — closing band */}
+      <Footer />
     </>
   );
 }
