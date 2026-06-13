@@ -133,10 +133,40 @@ export default function Hero({ entered = true }: { entered?: boolean }) {
 
         {/* Footer row */}
         <footer
-          className="enter flex w-full items-center justify-between px-6 pb-5 font-mono text-[0.68rem] uppercase tracking-[0.18em] text-ink-dim sm:pb-6"
+          className="enter relative flex w-full items-center justify-between px-6 pb-5 font-mono text-[0.68rem] uppercase tracking-[0.18em] text-ink-dim sm:pb-6"
           style={{ transitionDelay: "780ms" }}
         >
           <span>Behind the Mask</span>
+
+          {/* Centered scroll cue — an animated down-arrow invites the user into
+              the page; links to the first section below the hero. The overlay
+              mirrors the footer's own padding + items-center so the cue aligns
+              exactly with the side labels (rather than the footer's box). */}
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-6 pb-5 sm:pb-6">
+            <a
+              href="#how-it-works"
+              className="pointer-events-auto inline-flex items-center gap-2 text-ink-muted transition-colors hover:text-ink"
+              aria-label="Scroll to how it works"
+            >
+              <span>Scroll down</span>
+              <svg
+                className="scroll-arrow"
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M12 5v14" />
+                <path d="m19 12-7 7-7-7" />
+              </svg>
+            </a>
+          </div>
+
           <span
             className="hidden items-center gap-2 sm:inline-flex"
             aria-hidden="true"
