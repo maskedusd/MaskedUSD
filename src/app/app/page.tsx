@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import ConnectButton from "@/components/web3/ConnectButton";
 import MintRedeemCard from "@/components/app/MintRedeemCard";
 import ShieldedPanel from "@/components/app/ShieldedPanel";
+import BackingStrip from "@/components/app/BackingStrip";
 
 export default function AppPage() {
   return (
@@ -33,7 +34,11 @@ export default function AppPage() {
             1:1, non-custodial, immutable.
           </p>
 
-          <div className="mt-9 grid items-start gap-6 md:grid-cols-2">
+          <div className="mt-7">
+            <BackingStrip />
+          </div>
+
+          <div className="mt-6 grid items-start gap-6 md:grid-cols-2">
             <MintRedeemCard />
             <ShieldedPanel />
           </div>
