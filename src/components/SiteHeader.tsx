@@ -120,15 +120,12 @@ export default function SiteHeader({ entered = false }: { entered?: boolean }) {
           >
             <TelegramIcon size={16} />
           </a>
-          <button
-            type="button"
-            disabled
-            aria-disabled="true"
-            title="Launching soon"
-            className="inline-flex cursor-not-allowed items-center rounded-full border border-ink/10 bg-ink/[0.07] px-3.5 py-1.5 text-[0.82rem] font-medium text-ink-dim"
+          <a
+            href="/app"
+            className="inline-flex items-center rounded-full bg-accent px-3.5 py-1.5 text-[0.82rem] font-medium text-white transition hover:bg-accent-deep"
           >
             Launch App
-          </button>
+          </a>
         </div>
       </motion.nav>
     </motion.header>

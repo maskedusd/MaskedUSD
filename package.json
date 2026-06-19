@@ -9,12 +9,15 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.101.0",
     "framer-motion": "^12.40.0",
     "lucide-react": "^1.18.0",
     "next": "16.2.7",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "three": "^0.184.0"
+    "three": "^0.184.0",
+    "viem": "^2.52.2",
+    "wagmi": "^2.19.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -26,5 +29,9 @@
     "eslint-config-next": "16.2.7",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "overridesComment": "ws forced past GHSA-58qx-3vcg-4xpx / GHSA-96hv-2xvq-fx4p (pulled transitively by wallet-connector SDKs; we use the injected connector so it's unused, but bumped anyway).",
+  "overrides": {
+    "ws": "^8.21.0"
   }
 }
