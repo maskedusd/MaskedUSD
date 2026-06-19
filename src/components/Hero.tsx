@@ -68,13 +68,13 @@ export default function Hero({ entered = true }: { entered?: boolean }) {
               className="enter mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row"
               style={{ transitionDelay: "660ms" }}
             >
-              {/* Primary CTA — the future "Launch App"; inert until launch. */}
-              <button
-                type="button"
+              {/* Primary CTA — opens the dApp (mint/redeem + shielded preview). */}
+              <a
+                href="/app"
                 className="pointer-events-auto inline-flex w-full items-center justify-center rounded-full bg-ink px-6 py-3 text-sm font-medium text-white shadow-[0_10px_28px_-12px_rgba(27,20,56,0.5)] transition-transform hover:-translate-y-0.5 sm:w-auto"
               >
                 Launch App
-              </button>
+              </a>
               {/* Secondary CTA — scrolls down to the Tokens section; grows on hover. */}
               <SmoothScrollLink
                 targetId="tokens"
