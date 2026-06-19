@@ -6,6 +6,7 @@ import ConnectButton from "@/components/web3/ConnectButton";
 import MintRedeemCard from "@/components/app/MintRedeemCard";
 import ShieldedPanel from "@/components/app/ShieldedPanel";
 import BackingStrip from "@/components/app/BackingStrip";
+import NetworkNotice from "@/components/app/NetworkNotice";
 
 export default function AppPage() {
   return (
@@ -34,7 +35,8 @@ export default function AppPage() {
             1:1, non-custodial, immutable.
           </p>
 
-          <div className="mt-7">
+          <div className="mt-7 space-y-3">
+            <NetworkNotice />
             <BackingStrip />
           </div>
 

@@ -3,6 +3,7 @@
 import { useChainId, useReadContract } from "wagmi";
 import { ERC20_ABI, VAULT_ABI, addressesFor, rampsLive } from "@/lib/contracts";
 import { displayUnits } from "@/lib/format";
+import Skeleton from "@/components/ui/Skeleton";
 
 /// Proof-of-reserves at a glance: every USDM in existence is backed by an equal USDC balance in the
 /// vault. `totalBacking == USDM totalSupply` is the protocol's 1:1 invariant — shown live when the
@@ -30,9 +31,17 @@ export default function BackingStrip() {
 
   return (
     <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-2xl border border-ink/10 bg-surface px-5 py-3 text-[0.82rem]">
-      <Stat label="USDM supply" value={live ? `${displayUnits(supply.data)} USDM` : "—"} />
+      <Stat
+        label="USDM supply"
+        value={live ? `${displayUnits(supply.data)} USDM` : "—"}
+        loading={live && supply.isLoading}
+      />
       <span className="hidden h-4 w-px bg-ink/10 sm:block" />
-      <Stat label="USDC backing" value={live ? `${displayUnits(backing.data)} USDC` : "—"} />
+      <Stat
+        label="USDC backing"
+        value={live ? `${displayUnits(backing.data)} USDC` : "—"}
+        loading={live && backing.isLoading}
+      />
       <span className="hidden h-4 w-px bg-ink/10 sm:block" />
       <div className="flex items-center gap-1.5">
         <span
@@ -48,11 +57,11 @@ export default function BackingStrip() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, loading }: { label: string; value: string; loading?: boolean }) {
   return (
     <div className="flex flex-col">
       <span className="text-[0.68rem] uppercase tracking-wide text-ink-dim">{label}</span>
-      <span className="font-mono text-ink">{value}</span>
+      <span className="font-mono text-ink">{loading ? <Skeleton className="h-4 w-20" /> : value}</span>
     </div>
   );
 }

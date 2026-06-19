@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Web3Provider from "@/components/web3/Web3Provider";
+import { ToastProvider } from "@/components/web3/Toaster";
 
 export const metadata: Metadata = {
   title: "MaskedUSD — App",
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 };
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  return <Web3Provider>{children}</Web3Provider>;
+  return (
+    <Web3Provider>
+      <ToastProvider>{children}</ToastProvider>
+    </Web3Provider>
+  );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAccount, useChainId, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import {
   ERC20_ABI,
@@ -10,6 +10,8 @@ import {
   rampsLive,
 } from "@/lib/contracts";
 import { displayUnits, fromUnits, isValidAmount, toUnits } from "@/lib/format";
+import { useToast } from "@/components/web3/Toaster";
+import Skeleton from "@/components/ui/Skeleton";
 
 type Mode = "mint" | "redeem";
 
@@ -47,6 +49,7 @@ export default function MintRedeemCard() {
   const valid = isValidAmount(amount);
   const amountUnits = valid ? toUnits(amount) : 0n;
   const balance = mode === "mint" ? usdcBal.data : usdmBal.data;
+  const balanceLoading = !!address && (mode === "mint" ? usdcBal.isLoading : usdmBal.isLoading);
   const insufficient = valid && balance !== undefined && amountUnits > balance;
   const needsApproval =
     mode === "mint" && valid && allowance.data !== undefined && amountUnits > allowance.data;
@@ -54,17 +57,44 @@ export default function MintRedeemCard() {
   const { writeContract, data: hash, isPending, error, reset } = useWriteContract();
   const { isLoading: confirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
-  // refresh reads + clear the field after a confirmed tx
+  // transaction toasts
+  const toast = useToast();
+  const toastId = useRef<string | null>(null);
+  const labels = useRef<{ pending: string; done: string }>({ pending: "", done: "" });
+
+  // tx submitted (hash available) → attach the explorer link
+  useEffect(() => {
+    if (hash && toastId.current) {
+      toast.update(toastId.current, { description: "Submitted — awaiting confirmation", hash, chainId });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hash]);
+
+  // confirmed → refresh reads, clear the field, finish the toast
   useEffect(() => {
     if (isSuccess) {
       usdcBal.refetch();
       usdmBal.refetch();
       allowance.refetch();
       if (!needsApproval) setAmount("");
+      if (toastId.current) {
+        toast.update(toastId.current, { status: "success", title: labels.current.done, description: undefined });
+        toastId.current = null;
+      }
       reset();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSuccess]);
+
+  // failed / rejected
+  useEffect(() => {
+    if (error && toastId.current) {
+      const msg = (error as { shortMessage?: string }).shortMessage ?? "Transaction rejected";
+      toast.update(toastId.current, { status: "error", title: "Transaction failed", description: msg });
+      toastId.current = null;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error]);
 
   useEffect(() => {
     reset();
@@ -72,6 +102,18 @@ export default function MintRedeemCard() {
 
   function submit() {
     if (!live || !address || !valid) return;
+    labels.current =
+      mode === "mint"
+        ? needsApproval
+          ? { pending: "Approving USDC", done: "USDC approved" }
+          : { pending: "Minting USDM", done: "Minted USDM" }
+        : { pending: "Redeeming to USDC", done: "Redeemed to USDC" };
+    toastId.current = toast.show({
+      status: "pending",
+      title: labels.current.pending,
+      description: "Confirm in your wallet",
+    });
+
     if (mode === "mint") {
       if (needsApproval) {
         writeContract({ address: addrs!.usdc, abi: ERC20_ABI, functionName: "approve", args: [addrs!.vault, amountUnits] });
@@ -136,8 +178,9 @@ export default function MintRedeemCard() {
           </span>
         </div>
         <div className="mt-2 flex items-center justify-between text-[0.74rem] text-ink-dim">
-          <span>
-            Balance: {displayUnits(balance)} {mode === "mint" ? "USDC" : "USDM"}
+          <span className="inline-flex items-center gap-1">
+            Balance: {balanceLoading ? <Skeleton className="h-3 w-10" /> : displayUnits(balance)}{" "}
+            {mode === "mint" ? "USDC" : "USDM"}
           </span>
           {balance !== undefined && balance > 0n && (
             <button
@@ -167,16 +210,6 @@ export default function MintRedeemCard() {
       >
         {cta}
       </button>
-
-      {isSuccess && !busy && (
-        <p className="mt-3 text-center text-[0.78rem] text-emerald-600">Confirmed on-chain ✓</p>
-      )}
-      {error && (
-        <p className="mt-3 text-center text-[0.78rem] text-red-500">
-          {/* surface only the short reason, not the full stack */}
-          {(error as { shortMessage?: string }).shortMessage ?? "Transaction rejected"}
-        </p>
-      )}
     </div>
   );
 }
