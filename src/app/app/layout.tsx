@@ -5,6 +5,12 @@ import { ToastProvider } from "@/components/web3/Toaster";
 export const metadata: Metadata = {
   title: "MaskedUSD — App",
   description: "Mint and redeem USDM 1:1 against USDC, and shield it privately on Base.",
+  openGraph: {
+    title: "MaskedUSD — App",
+    description: "Mint and redeem USDM 1:1 against USDC, and shield it privately on Base.",
+    type: "website",
+  },
+  robots: { index: false }, // pre-launch dApp preview — keep it out of search until live
 };
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
