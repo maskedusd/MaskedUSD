@@ -169,6 +169,7 @@ export default function MintRedeemCard() {
           <input
             inputMode="decimal"
             placeholder="0.0"
+            aria-label={mode === "mint" ? "USDC amount to mint" : "USDM amount to redeem"}
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             className="w-full bg-transparent font-display text-2xl text-ink outline-none placeholder:text-ink-dim"

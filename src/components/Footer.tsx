@@ -206,12 +206,13 @@ export default function Footer() {
                 </a>
               </li>
               <li>
-                <span className="inline-flex cursor-not-allowed items-center gap-2 text-sm text-ink-dim">
+                <a
+                  href="/app"
+                  className="inline-flex items-center gap-2 text-sm text-ink-muted transition hover:text-ink"
+                >
                   Launch App
-                  <span className="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-ink-dim/80">
-                    Soon
-                  </span>
-                </span>
+                  <span className="status-dot" aria-hidden="true" />
+                </a>
               </li>
             </ul>
           </motion.div>
