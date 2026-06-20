@@ -35,11 +35,12 @@ export const ZERO = "0x0000000000000000000000000000000000000000" as const;
 export const ADDRESSES: Record<number, Addresses> = {
   [baseSepolia.id]: {
     usdc: "0x036CbD53842c5426634e7929541eC2318f3dCF7e", // Base Sepolia USDC (Circle testnet)
-    usdm: ZERO,
-    vault: ZERO,
-    mintRamp: ZERO,
-    redeemRamp: ZERO,
-    pool: ZERO,
+    // Deployed 2026-06-20 (unaudited testnet bring-up). Guardian = deployer EOA bootstrap.
+    usdm: "0x09a4184daEdaCdcCcded6087f576E57a05950fef",
+    vault: "0x7dD602d140C7f12591a9CcBF0d5300F566e36464",
+    mintRamp: "0x16154843AB66ca01CD14d6f36566479FAA2A3Df3",
+    redeemRamp: "0x6D6E4c124bCb94EA8364FAC4691A779e68d23CDb",
+    pool: "0x0e694f3243a89a91597A35B188F91750b1F1CDe6",
   },
   [base.id]: {
     usdc: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // Base mainnet USDC (native)
