@@ -24,12 +24,24 @@ export const VAULT_ABI = parseAbi(["function totalBacking() view returns (uint25
 // the leaf index assigned to the commitment (needed later to spend/unshield it).
 export const SHIELDED_POOL_ABI = parseAbi([
   "function shield(uint256 commitment, uint256 amount, bytes proof)",
+  "function transfer(uint256 root, uint256 nullifierA, uint256 nullifierB, uint256 commitmentA, uint256 commitmentB, uint256 fee, address feeRecipient, bytes proof)",
   "function unshield(uint256 root, uint256 associationRoot, uint256 nullifier, address to, uint256 amount, uint256 fee, address feeRecipient, bytes proof)",
   "function currentRoot() view returns (uint256)",
+  "function isKnownRoot(uint256 root) view returns (bool)",
   "function acceptedAssociationRoot(uint256 root) view returns (bool)",
   "function nullifierSpent(uint256 nullifier) view returns (bool)",
   "function acceptAssociationRoot(uint256 root)", // guardian-only
   "event Shield(uint256 indexed commitment, uint256 indexed leafIndex, uint256 amount)",
+  "event PrivateTransfer(uint256 spentRoot, uint256 indexed nullifierA, uint256 indexed nullifierB, uint256 commitmentA, uint256 commitmentB, uint256 leafIndexA, uint256 leafIndexB, uint256 fee, address feeRecipient)",
+]);
+
+// NoteMemo: the permissionless encrypted note-discovery channel. A sender posts the recipient's
+// output-note secret (encrypted to their viewing key) here, keyed by the output commitment; recipients
+// scan Note events and trial-decrypt. Stateless/fund-less, decoupled from the pool's value transfer.
+export const NOTE_MEMO_ABI = parseAbi([
+  "function post(uint256 commitment, bytes ciphertext)",
+  "function postMany(uint256[] commitments, bytes[] ciphertexts)",
+  "event Note(uint256 indexed commitment, bytes ciphertext)",
 ]);
 
 export interface Addresses {
@@ -39,6 +51,7 @@ export interface Addresses {
   mintRamp: `0x${string}`;
   redeemRamp: `0x${string}`;
   pool: `0x${string}`;
+  noteMemo: `0x${string}`; // encrypted note-discovery channel for private transfers
   guardian: `0x${string}`; // can accept association roots (gates unshield) + pause
 }
 
@@ -62,6 +75,7 @@ export const ADDRESSES: Record<number, Addresses> = {
     mintRamp: "0x16154843AB66ca01CD14d6f36566479FAA2A3Df3",
     redeemRamp: "0x6D6E4c124bCb94EA8364FAC4691A779e68d23CDb",
     pool: "0x0e694f3243a89a91597A35B188F91750b1F1CDe6",
+    noteMemo: "0xF276B64C7e4456fF072D787694c7615A0F62C941", // deployed 2026-06-21
     guardian: "0xd656427d14052adA99B238Fe868A76a15ebC99bE",
   },
   [base.id]: {
@@ -71,6 +85,7 @@ export const ADDRESSES: Record<number, Addresses> = {
     mintRamp: ZERO,
     redeemRamp: ZERO,
     pool: ZERO,
+    noteMemo: ZERO,
     guardian: ZERO,
   },
 };
@@ -87,4 +102,9 @@ export function rampsLive(a: Addresses | undefined): a is Addresses {
 /// The shielded pool is live on this chain.
 export function poolLive(a: Addresses | undefined): a is Addresses {
   return !!a && a.pool !== ZERO;
+}
+
+/// Private transfers are available (pool + the NoteMemo discovery channel are both deployed).
+export function transfersLive(a: Addresses | undefined): a is Addresses {
+  return !!a && a.pool !== ZERO && a.noteMemo !== ZERO;
 }

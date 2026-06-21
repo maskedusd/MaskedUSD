@@ -12,19 +12,41 @@ import {
   Lock,
   Copy,
   Check,
+  Send,
+  Inbox,
+  RotateCw,
 } from "lucide-react";
 import {
   ERC20_ABI,
   SHIELDED_POOL_ABI,
+  NOTE_MEMO_ABI,
   POOL_DEPLOY_BLOCK,
   addressesFor,
   poolLive,
+  transfersLive,
 } from "@/lib/contracts";
 import { displayUnits, fromUnits, isValidAmount, toUnits } from "@/lib/format";
 import { createShieldNote, proveShield } from "@/lib/shielded/client";
 import { buildIndexer, fetchPoolLogs, proveUnshield } from "@/lib/shielded/unshield";
-import { addNote, loadNotes, toStored, updateNote, type StoredNote } from "@/lib/shielded/store";
-import { encodeAddress } from "@/lib/shielded/address";
+import { selectTwoInputs, buildOutputs, proveTransfer } from "@/lib/shielded/transfer";
+import { decodeMemoLogs, discoverReceivedNotes } from "@/lib/shielded/discovery";
+import {
+  addNote,
+  loadNotes,
+  toStored,
+  updateNote,
+  discoveredToStored,
+  type StoredNote,
+} from "@/lib/shielded/store";
+import {
+  loadPendingMemos,
+  addPendingMemo,
+  removePendingMemo,
+  type PendingMemo,
+} from "@/lib/shielded/memoQueue";
+import { encodeAddress, decodeAddress, isValidAddress } from "@/lib/shielded/address";
+import { encryptNote } from "@/lib/shielded/noteCrypto";
+import type { Note } from "@/lib/shielded/notes";
 import { useIdentity } from "@/components/web3/IdentityProvider";
 import { useToast } from "@/components/web3/Toaster";
 import Skeleton from "@/components/ui/Skeleton";
@@ -32,6 +54,13 @@ import Skeleton from "@/components/ui/Skeleton";
 type Phase = "idle" | "proving" | "approving" | "shielding";
 
 const short = (hex: string) => `${hex.slice(0, 6)}…${hex.slice(-4)}`;
+const commitHex = (c: bigint) => `0x${c.toString(16).padStart(64, "0")}`;
+const storedToNote = (n: StoredNote): Note => ({
+  value: BigInt(n.value),
+  ownerPriv: BigInt(n.ownerPriv),
+  blinding: BigInt(n.blinding),
+  assetId: BigInt(n.assetId),
+});
 
 export default function ShieldedPanel() {
   const { address, isConnected } = useAccount();
@@ -39,10 +68,14 @@ export default function ShieldedPanel() {
   const publicClient = usePublicClient();
   const addrs = addressesFor(chainId);
   const live = poolLive(addrs);
+  const canTransfer = transfersLive(addrs);
 
   const { identity, locked, unlocking, error: idError, unlock } = useIdentity();
   const custodyKey = identity?.custodyKey;
-  const myAddress = useMemo(() => (identity ? encodeAddress(identity.encPub) : null), [identity]);
+  const myAddress = useMemo(
+    () => (identity ? encodeAddress(identity.encPub, identity.spendPub) : null),
+    [identity],
+  );
 
   const [amount, setAmount] = useState("");
   const [phase, setPhase] = useState<Phase>("idle");
@@ -50,12 +83,23 @@ export default function ShieldedPanel() {
   const [accepting, setAccepting] = useState(false);
   const [notes, setNotes] = useState<StoredNote[]>([]);
   const [copied, setCopied] = useState(false);
+  const [recipientAddr, setRecipientAddr] = useState("");
+  const [transferAmount, setTransferAmount] = useState("");
+  const [transferring, setTransferring] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [pending, setPending] = useState<PendingMemo[]>([]);
 
   const { writeContractAsync } = useWriteContract();
   const toast = useToast();
 
   const refreshNotes = useCallback(async () => {
-    if (!address || !custodyKey) {
+    if (!address) {
+      setNotes([]);
+      setPending([]);
+      return;
+    }
+    setPending(loadPendingMemos(chainId, address));
+    if (!custodyKey) {
       setNotes([]);
       return;
     }
@@ -86,7 +130,7 @@ export default function ShieldedPanel() {
   const amountUnits = valid ? toUnits(amount) : 0n;
   const balance = usdmBal.data;
   const insufficient = valid && balance !== undefined && amountUnits > balance;
-  const busy = phase !== "idle" || withdrawing !== null || accepting;
+  const busy = phase !== "idle" || withdrawing !== null || accepting || transferring || scanning;
 
   const shieldedTotal = useMemo(
     () => notes.filter((n) => n.status !== "spent").reduce((s, n) => s + BigInt(n.value), 0n),
@@ -114,7 +158,7 @@ export default function ShieldedPanel() {
     try {
       setPhase("proving");
       const note = createShieldNote(amountUnits);
-      const commitmentHex = `0x${note.commitment.toString(16).padStart(64, "0")}`;
+      const commitmentHex = commitHex(note.commitment);
       await addNote(chainId, address, custodyKey, toStored(note, { status: "shielding" }));
       await refreshNotes();
 
@@ -153,7 +197,7 @@ export default function ShieldedPanel() {
       let leafIndex: number | undefined;
       try {
         const evs = parseEventLogs({ abi: SHIELDED_POOL_ABI, eventName: "Shield", logs: receipt.logs });
-        const mine = evs.find((e) => `0x${e.args.commitment.toString(16).padStart(64, "0")}` === commitmentHex);
+        const mine = evs.find((e) => commitHex(e.args.commitment) === commitmentHex);
         if (mine) leafIndex = Number(mine.args.leafIndex);
       } catch {
         /* best-effort; recoverable by re-indexing */
@@ -189,17 +233,10 @@ export default function ShieldedPanel() {
     });
     setWithdrawing(n.commitment);
     try {
-      // rebuild the commitment tree — chunked scan (RPC caps getLogs at ~2000 blocks)
       const logs = await fetchPoolLogs(publicClient, addrs!.pool, POOL_DEPLOY_BLOCK[chainId] ?? 0n);
       const ix = buildIndexer(logs);
 
-      const note = {
-        value: BigInt(n.value),
-        ownerPriv: BigInt(n.ownerPriv),
-        blinding: BigInt(n.blinding),
-        assetId: BigInt(n.assetId),
-      };
-      // recover the real leaf index by commitment (don't trust stored) + classify spent
+      const note = storedToNote(n);
       const located = ix.locate([note])[0];
       if (!located) {
         toast.update(tid, {
@@ -218,7 +255,6 @@ export default function ShieldedPanel() {
       const leafIndex = located.leafIndex;
       if (n.leafIndex !== leafIndex) await updateNote(chainId, address, custodyKey, n.commitment, { leafIndex });
 
-      // check the association root is accepted BEFORE the ~10s proof (fail fast)
       const { root } = ix.witness(leafIndex);
       const accepted = (await publicClient.readContract({
         address: addrs!.pool,
@@ -266,6 +302,178 @@ export default function ShieldedPanel() {
       toast.update(tid, { status: "error", title: "Withdraw failed", description: msg });
     } finally {
       setWithdrawing(null);
+    }
+  }
+
+  async function doTransfer() {
+    if (!canTransfer || !address || !publicClient || !custodyKey || !identity) return;
+    const recipient = recipientAddr.trim();
+    if (!isValidAddress(recipient)) {
+      toast.show({ status: "error", title: "Invalid address", description: "Enter a valid musd1… MaskedUSD address." });
+      return;
+    }
+    if (!isValidAmount(transferAmount)) return;
+    const amt = toUnits(transferAmount);
+    const { encPub: rEncPub, spendPub: rSpendPub } = decodeAddress(recipient);
+
+    const tid = toast.show({
+      status: "pending",
+      title: "Preparing private transfer",
+      description: "Rebuilding the pool tree from on-chain logs…",
+    });
+    setTransferring(true);
+    try {
+      const logs = await fetchPoolLogs(publicClient, addrs!.pool, POOL_DEPLOY_BLOCK[chainId] ?? 0n);
+      const ix = buildIndexer(logs);
+
+      const myNotes = (await loadNotes(chainId, address, custodyKey))
+        .filter((n) => n.status !== "spent")
+        .map(storedToNote);
+      const spendable = ix.spendable(myNotes);
+      const inputs = selectTwoInputs(spendable, amt);
+      if (!inputs) {
+        toast.update(tid, {
+          status: "error",
+          title: "Need two notes to send",
+          description:
+            spendable.length < 2
+              ? "A private transfer spends two shielded notes. Shield again to create a second note."
+              : "Your two largest notes don't cover this amount. Consolidate or send less.",
+        });
+        return;
+      }
+      const inSum = inputs[0].note.value + inputs[1].note.value;
+      const plan = buildOutputs(inSum, amt, 0n, rSpendPub);
+
+      toast.update(tid, { title: "Proving transfer", description: "Zero-knowledge proof in your browser (~10s)" });
+      const tp = await proveTransfer(ix, inputs, plan, 0n, address);
+
+      toast.update(tid, { title: "Sending privately", description: "Confirm in your wallet" });
+      const hash = await writeContractAsync({
+        address: addrs!.pool,
+        abi: SHIELDED_POOL_ABI,
+        functionName: "transfer",
+        args: [tp.root, tp.nullifiers[0], tp.nullifiers[1], tp.outCommitments[0], tp.outCommitments[1], 0n, address, toHex(tp.proof)],
+      });
+      toast.update(tid, { description: "Submitted — awaiting confirmation", hash, chainId });
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+      // mark the two spent inputs
+      await updateNote(chainId, address, custodyKey, commitHex(inputs[0].commitment), { status: "spent", txHash: hash });
+      await updateNote(chainId, address, custodyKey, commitHex(inputs[1].commitment), { status: "spent", txHash: hash });
+
+      // store the change note (owned by us) with its on-chain leaf index
+      if (plan.change.value > 0n) {
+        let changeLeaf: number | undefined;
+        try {
+          const evs = parseEventLogs({ abi: SHIELDED_POOL_ABI, eventName: "PrivateTransfer", logs: receipt.logs });
+          const mine = evs.find((e) => e.args.commitmentB === plan.change.commitment);
+          if (mine) changeLeaf = Number(mine.args.leafIndexB);
+        } catch {
+          /* best-effort */
+        }
+        await addNote(
+          chainId,
+          address,
+          custodyKey,
+          toStored(
+            { value: plan.change.value, ownerPriv: plan.change.ownerPriv, blinding: plan.change.blinding, assetId: 0n, commitment: plan.change.commitment },
+            { status: "shielded", leafIndex: changeLeaf, txHash: hash },
+          ),
+        );
+      }
+
+      // C3: post the discovery memo as a SEPARATE, best-effort tx — the payment is already final.
+      const wire = encryptNote(rEncPub, { value: amt, blinding: plan.recipient.blinding, assetId: 0n }, plan.recipient.commitment);
+      const memoHex = toHex(wire);
+      const recipientCommitHex = commitHex(plan.recipient.commitment);
+      addPendingMemo(chainId, address, { commitment: recipientCommitHex, ciphertext: memoHex });
+      setPending(loadPendingMemos(chainId, address));
+      try {
+        const mHash = await writeContractAsync({
+          address: addrs!.noteMemo,
+          abi: NOTE_MEMO_ABI,
+          functionName: "post",
+          args: [plan.recipient.commitment, memoHex],
+        });
+        await publicClient.waitForTransactionReceipt({ hash: mHash });
+        removePendingMemo(chainId, address, recipientCommitHex);
+        setPending(loadPendingMemos(chainId, address));
+        toast.update(tid, {
+          status: "success",
+          title: `Sent ${displayUnits(amt)} USDM privately`,
+          description: "The recipient can now discover it.",
+        });
+      } catch {
+        toast.update(tid, {
+          status: "success",
+          title: `Sent ${displayUnits(amt)} USDM privately`,
+          description: "Payment is final, but the discovery notice didn't post — use Resend below.",
+        });
+      }
+
+      await refreshNotes();
+      usdmBal.refetch();
+      setTransferAmount("");
+      setRecipientAddr("");
+    } catch (e) {
+      const msg = (e as { shortMessage?: string })?.shortMessage ?? "Transfer failed or was rejected";
+      toast.update(tid, { status: "error", title: "Transfer failed", description: msg });
+      await refreshNotes();
+    } finally {
+      setTransferring(false);
+    }
+  }
+
+  async function doScan() {
+    if (!canTransfer || !address || !publicClient || !custodyKey || !identity) return;
+    setScanning(true);
+    const tid = toast.show({ status: "pending", title: "Checking for received payments", description: "Scanning the pool + memos…" });
+    try {
+      const poolLogs = await fetchPoolLogs(publicClient, addrs!.pool, POOL_DEPLOY_BLOCK[chainId] ?? 0n);
+      const ix = buildIndexer(poolLogs);
+      const memoLogs = await fetchPoolLogs(publicClient, addrs!.noteMemo, POOL_DEPLOY_BLOCK[chainId] ?? 0n);
+      const found = discoverReceivedNotes(decodeMemoLogs(memoLogs), ix, identity.encPriv, identity.spendPriv);
+
+      const existing = new Set((await loadNotes(chainId, address, custodyKey)).map((n) => n.commitment.toLowerCase()));
+      let added = 0;
+      for (const d of found) {
+        const stored = discoveredToStored(d);
+        if (existing.has(stored.commitment.toLowerCase())) continue;
+        await addNote(chainId, address, custodyKey, stored);
+        added++;
+      }
+      await refreshNotes();
+      toast.update(tid, {
+        status: "success",
+        title: added ? `Found ${added} received note${added > 1 ? "s" : ""}` : "No new payments",
+        description: added ? "Added to your shielded balance." : "You're all caught up.",
+      });
+    } catch (e) {
+      const msg = (e as { shortMessage?: string })?.shortMessage ?? "Scan failed";
+      toast.update(tid, { status: "error", title: "Scan failed", description: msg });
+    } finally {
+      setScanning(false);
+    }
+  }
+
+  async function resendMemo(m: PendingMemo) {
+    if (!canTransfer || !address || !publicClient) return;
+    const tid = toast.show({ status: "pending", title: "Resending payment notice", description: "Confirm in your wallet" });
+    try {
+      const hash = await writeContractAsync({
+        address: addrs!.noteMemo,
+        abi: NOTE_MEMO_ABI,
+        functionName: "post",
+        args: [BigInt(m.commitment), m.ciphertext as `0x${string}`],
+      });
+      await publicClient.waitForTransactionReceipt({ hash });
+      removePendingMemo(chainId, address, m.commitment);
+      setPending(loadPendingMemos(chainId, address));
+      toast.update(tid, { status: "success", title: "Payment notice sent", description: "The recipient can now discover the note." });
+    } catch (e) {
+      const msg = (e as { shortMessage?: string })?.shortMessage ?? "rejected";
+      toast.update(tid, { status: "error", title: "Resend failed", description: msg });
     }
   }
 
@@ -317,6 +525,8 @@ export default function ShieldedPanel() {
     return "Shield USDM";
   }, [isConnected, live, valid, insufficient, phase]);
 
+  const transferReady = isValidAddress(recipientAddr.trim()) && isValidAmount(transferAmount);
+
   return (
     <div className="w-full max-w-md rounded-3xl border border-ink/10 bg-surface p-6 shadow-xl shadow-accent/5">
       <div className="mb-4 flex items-center justify-between">
@@ -329,11 +539,7 @@ export default function ShieldedPanel() {
       <div className="mb-5 rounded-2xl border border-ink/10 bg-bg px-4 py-3.5">
         <p className="text-[0.74rem] text-ink-dim">Held privately</p>
         <p className="font-display text-2xl text-ink">
-          {locked ? (
-            <span className="text-ink-dim">•••••</span>
-          ) : (
-            displayUnits(shieldedTotal)
-          )}{" "}
+          {locked ? <span className="text-ink-dim">•••••</span> : displayUnits(shieldedTotal)}{" "}
           <span className="font-mono text-base text-ink-muted">USDM</span>
         </p>
       </div>
@@ -439,18 +645,111 @@ export default function ShieldedPanel() {
             </p>
           )}
 
-          {notes.length > 0 && (
-            <div className="mt-5">
-              <div className="mb-2 flex items-center justify-between">
-                <p className="font-mono text-[0.66rem] uppercase tracking-[0.16em] text-ink-dim">Your notes</p>
+          {/* Send privately */}
+          {canTransfer && (
+            <div className="mt-5 rounded-2xl border border-ink/10 bg-bg p-4">
+              <p className="mb-2 font-mono text-[0.66rem] uppercase tracking-[0.16em] text-ink-dim">
+                Send privately
+              </p>
+              <input
+                placeholder="musd1… recipient address"
+                aria-label="Recipient MaskedUSD address"
+                value={recipientAddr}
+                onChange={(e) => setRecipientAddr(e.target.value)}
+                disabled={busy}
+                spellCheck={false}
+                className="w-full rounded-xl border border-ink/10 bg-surface px-3 py-2 font-mono text-[0.8rem] text-ink outline-none placeholder:text-ink-dim focus:border-accent/40 disabled:opacity-60"
+              />
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  inputMode="decimal"
+                  placeholder="0.0"
+                  aria-label="Amount to send"
+                  value={transferAmount}
+                  onChange={(e) => setTransferAmount(e.target.value)}
+                  disabled={busy}
+                  className="w-full rounded-xl border border-ink/10 bg-surface px-3 py-2 font-display text-lg text-ink outline-none placeholder:text-ink-dim focus:border-accent/40 disabled:opacity-60"
+                />
                 <button
                   type="button"
-                  onClick={exportNotes}
-                  className="inline-flex items-center gap-1 text-[0.72rem] font-medium text-accent-deep hover:underline"
+                  onClick={doTransfer}
+                  disabled={busy || !transferReady}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-accent px-4 py-2.5 text-[0.85rem] font-semibold text-white transition hover:bg-accent-deep disabled:cursor-not-allowed disabled:bg-ink/15 disabled:text-ink-dim"
                 >
-                  <Download className="h-3 w-3" /> Back up
+                  {transferring ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  Send
                 </button>
               </div>
+              {recipientAddr.trim() && !isValidAddress(recipientAddr.trim()) && (
+                <p className="mt-1.5 text-[0.72rem] text-red-500">Not a valid musd1… address.</p>
+              )}
+              <p className="mt-2 text-[0.7rem] leading-relaxed text-ink-dim">
+                Spends two of your shielded notes; only the recipient&apos;s key can spend what they
+                receive. Posts an encrypted notice so they can find it. ~10s proof.
+              </p>
+            </div>
+          )}
+
+          {/* Pending discovery notices (re-postable) */}
+          {pending.length > 0 && (
+            <div className="mt-4 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4">
+              <p className="font-mono text-[0.64rem] uppercase tracking-[0.16em] text-amber-600">
+                Payment notice not posted
+              </p>
+              <p className="mt-1 text-[0.74rem] leading-relaxed text-ink-muted">
+                These payments settled, but the recipient can&apos;t discover them until the notice is
+                posted. Resend it:
+              </p>
+              <ul className="mt-2 space-y-1.5">
+                {pending.map((m) => (
+                  <li key={m.commitment} className="flex items-center justify-between gap-2 text-[0.76rem]">
+                    <span className="font-mono text-ink-muted">{short(m.commitment)}</span>
+                    <button
+                      type="button"
+                      onClick={() => resendMemo(m)}
+                      disabled={busy}
+                      className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-0.5 text-[0.7rem] font-medium text-amber-700 transition hover:bg-amber-500/25 disabled:opacity-50"
+                    >
+                      <RotateCw className="h-3 w-3" /> Resend
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Notes + received scan */}
+          <div className="mt-5">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="font-mono text-[0.66rem] uppercase tracking-[0.16em] text-ink-dim">Your notes</p>
+              <div className="flex items-center gap-3">
+                {canTransfer && (
+                  <button
+                    type="button"
+                    onClick={doScan}
+                    disabled={busy}
+                    className="inline-flex items-center gap-1 text-[0.72rem] font-medium text-accent-deep hover:underline disabled:opacity-50"
+                  >
+                    {scanning ? <Loader2 className="h-3 w-3 animate-spin" /> : <Inbox className="h-3 w-3" />}
+                    Check received
+                  </button>
+                )}
+                {notes.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={exportNotes}
+                    className="inline-flex items-center gap-1 text-[0.72rem] font-medium text-accent-deep hover:underline"
+                  >
+                    <Download className="h-3 w-3" /> Back up
+                  </button>
+                )}
+              </div>
+            </div>
+            {notes.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-ink/10 bg-bg px-3 py-3 text-[0.76rem] text-ink-dim">
+                No notes yet. Shield USDM above, or check for payments sent to your address.
+              </p>
+            ) : (
               <ul className="space-y-1.5">
                 {notes
                   .slice()
@@ -460,7 +759,14 @@ export default function ShieldedPanel() {
                       key={n.commitment}
                       className="flex items-center justify-between gap-2 rounded-xl border border-ink/8 bg-bg px-3 py-2 text-[0.78rem]"
                     >
-                      <span className="font-mono text-ink-muted">{short(n.commitment)}</span>
+                      <span className="flex items-center gap-1.5">
+                        {n.received && (
+                          <span className="rounded-full bg-accent-soft px-1.5 py-0.5 text-[0.6rem] font-medium text-accent-deep">
+                            received
+                          </span>
+                        )}
+                        <span className="font-mono text-ink-muted">{short(n.commitment)}</span>
+                      </span>
                       <span className="flex items-center gap-2">
                         <span className="text-ink">{displayUnits(BigInt(n.value))} USDM</span>
                         {n.status === "shielded" ? (
@@ -490,8 +796,8 @@ export default function ShieldedPanel() {
                     </li>
                   ))}
               </ul>
-            </div>
-          )}
+            )}
+          </div>
 
           {isGuardian && (
             <div className="mt-4 rounded-2xl border border-ink/10 bg-bg px-4 py-3">

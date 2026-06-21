@@ -8,6 +8,7 @@
 // makes reads THROW (never silently return empty), so a bad key can't clobber good notes.
 
 import type { ShieldNote } from "./client";
+import type { DiscoveredNote } from "./discovery";
 import { isEnvelope, open, seal } from "./custody";
 
 export type NoteStatus = "shielding" | "shielded" | "spent";
@@ -19,9 +20,25 @@ export interface StoredNote {
   assetId: string; // decimal
   commitment: string; // 0x hex
   status: NoteStatus;
+  received?: boolean; // true if discovered via a NoteMemo (paid to us), vs self-shielded
   txHash?: string;
   leafIndex?: number;
   createdAt: number;
+}
+
+/// Convert a discovered (received) note into a stored, spendable note.
+export function discoveredToStored(d: DiscoveredNote): StoredNote {
+  return {
+    value: d.value.toString(),
+    ownerPriv: d.ownerPriv.toString(),
+    blinding: d.blinding.toString(),
+    assetId: d.assetId.toString(),
+    commitment: `0x${d.commitment.toString(16).padStart(64, "0")}`,
+    status: "shielded",
+    received: true,
+    leafIndex: d.leafIndex,
+    createdAt: Date.now(),
+  };
 }
 
 const PREFIX = "maskedusd:notes";

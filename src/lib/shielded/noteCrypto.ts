@@ -7,9 +7,11 @@
 // `ownerPriv` (its spend authority) — and nothing about the sender.
 //
 // Wire: version(1) || viewTag(1) || ephPub(32) || nonce(24) || aeadCtAndTag(N)
-// Payload: value(16) || ownerPriv(32) || blinding(32) || assetId(32) = 112 bytes
-//          (leafIndex is omitted — the recipient recovers it by matching the reconstructed commitment
-//           against the pool's PrivateTransfer event.)
+// Payload: value(16) || blinding(32) || assetId(32) = 80 bytes
+//          The recipient OWNS the note via their own spendPriv (the sender set the note's owner to the
+//          recipient's spendPub), so ownerPriv is NOT transmitted — the recipient reconstructs the
+//          commitment with H(value, Poseidon1(spendPriv), blinding, assetId) and matches it against the
+//          pool's PrivateTransfer event to recover the leaf index.
 
 import { x25519 } from "@noble/curves/ed25519.js";
 import { hkdf } from "@noble/hashes/hkdf.js";
@@ -25,7 +27,6 @@ const CT_OFF = 58;
 
 export interface NotePayload {
   value: bigint;
-  ownerPriv: bigint;
   blinding: bigint;
   assetId: bigint;
 }
@@ -43,19 +44,17 @@ function readUint(b: Uint8Array, off: number, len: number): bigint {
 }
 
 function encodePayload(p: NotePayload): Uint8Array {
-  const out = new Uint8Array(112);
+  const out = new Uint8Array(80);
   writeUint(out, 0, 16, p.value); // 128-bit value
-  writeUint(out, 16, 32, p.ownerPriv);
-  writeUint(out, 48, 32, p.blinding);
-  writeUint(out, 80, 32, p.assetId);
+  writeUint(out, 16, 32, p.blinding);
+  writeUint(out, 48, 32, p.assetId);
   return out;
 }
 function decodePayload(b: Uint8Array): NotePayload {
   return {
     value: readUint(b, 0, 16),
-    ownerPriv: readUint(b, 16, 32),
-    blinding: readUint(b, 48, 32),
-    assetId: readUint(b, 80, 32),
+    blinding: readUint(b, 16, 32),
+    assetId: readUint(b, 48, 32),
   };
 }
 
