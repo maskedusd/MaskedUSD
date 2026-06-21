@@ -3,7 +3,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAccount, useChainId, usePublicClient, useReadContract, useWriteContract } from "wagmi";
 import { toHex, parseEventLogs } from "viem";
-import { Shield, Loader2, Download, AlertTriangle, ArrowUpFromLine } from "lucide-react";
+import {
+  Shield,
+  Loader2,
+  Download,
+  AlertTriangle,
+  ArrowUpFromLine,
+  Lock,
+  Copy,
+  Check,
+} from "lucide-react";
 import {
   ERC20_ABI,
   SHIELDED_POOL_ABI,
@@ -15,6 +24,8 @@ import { displayUnits, fromUnits, isValidAmount, toUnits } from "@/lib/format";
 import { createShieldNote, proveShield } from "@/lib/shielded/client";
 import { buildIndexer, fetchPoolLogs, proveUnshield } from "@/lib/shielded/unshield";
 import { addNote, loadNotes, toStored, updateNote, type StoredNote } from "@/lib/shielded/store";
+import { encodeAddress } from "@/lib/shielded/address";
+import { useIdentity } from "@/components/web3/IdentityProvider";
 import { useToast } from "@/components/web3/Toaster";
 import Skeleton from "@/components/ui/Skeleton";
 
@@ -29,19 +40,36 @@ export default function ShieldedPanel() {
   const addrs = addressesFor(chainId);
   const live = poolLive(addrs);
 
+  const { identity, locked, unlocking, error: idError, unlock } = useIdentity();
+  const custodyKey = identity?.custodyKey;
+  const myAddress = useMemo(() => (identity ? encodeAddress(identity.encPub) : null), [identity]);
+
   const [amount, setAmount] = useState("");
   const [phase, setPhase] = useState<Phase>("idle");
   const [withdrawing, setWithdrawing] = useState<string | null>(null);
   const [accepting, setAccepting] = useState(false);
   const [notes, setNotes] = useState<StoredNote[]>([]);
+  const [copied, setCopied] = useState(false);
 
   const { writeContractAsync } = useWriteContract();
   const toast = useToast();
 
-  const refreshNotes = useCallback(() => {
-    setNotes(address ? loadNotes(chainId, address) : []);
-  }, [address, chainId]);
-  useEffect(() => refreshNotes(), [refreshNotes]);
+  const refreshNotes = useCallback(async () => {
+    if (!address || !custodyKey) {
+      setNotes([]);
+      return;
+    }
+    try {
+      setNotes(await loadNotes(chainId, address, custodyKey));
+    } catch {
+      // ciphertext present but undecryptable with this key: show nothing rather than wrong data.
+      // Nothing is ever written here, so the encrypted notes are not lost.
+      setNotes([]);
+    }
+  }, [address, chainId, custodyKey]);
+  useEffect(() => {
+    void refreshNotes();
+  }, [refreshNotes]);
 
   const usdmBal = useReadContract({
     address: live ? addrs!.usdm : undefined,
@@ -65,8 +93,19 @@ export default function ShieldedPanel() {
     [notes],
   );
 
+  async function copyAddress() {
+    if (!myAddress) return;
+    try {
+      await navigator.clipboard.writeText(myAddress);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard blocked — ignore */
+    }
+  }
+
   async function doShield() {
-    if (!live || !address || !publicClient || !valid || insufficient) return;
+    if (!live || !address || !publicClient || !valid || insufficient || !custodyKey) return;
     const tid = toast.show({
       status: "pending",
       title: "Generating proof on your device",
@@ -76,8 +115,8 @@ export default function ShieldedPanel() {
       setPhase("proving");
       const note = createShieldNote(amountUnits);
       const commitmentHex = `0x${note.commitment.toString(16).padStart(64, "0")}`;
-      addNote(chainId, address, toStored(note, { status: "shielding" }));
-      refreshNotes();
+      await addNote(chainId, address, custodyKey, toStored(note, { status: "shielding" }));
+      await refreshNotes();
 
       const { proof } = await proveShield(note);
       const proofHex = toHex(proof);
@@ -119,8 +158,12 @@ export default function ShieldedPanel() {
       } catch {
         /* best-effort; recoverable by re-indexing */
       }
-      updateNote(chainId, address, commitmentHex, { status: "shielded", txHash: sHash, leafIndex });
-      refreshNotes();
+      await updateNote(chainId, address, custodyKey, commitmentHex, {
+        status: "shielded",
+        txHash: sHash,
+        leafIndex,
+      });
+      await refreshNotes();
       usdmBal.refetch();
       setAmount("");
       toast.update(tid, {
@@ -131,14 +174,14 @@ export default function ShieldedPanel() {
     } catch (e) {
       const msg = (e as { shortMessage?: string })?.shortMessage ?? "Shield failed or was rejected";
       toast.update(tid, { status: "error", title: "Shield failed", description: msg });
-      refreshNotes();
+      await refreshNotes();
     } finally {
       setPhase("idle");
     }
   }
 
   async function doWithdraw(n: StoredNote) {
-    if (!live || !address || !publicClient) return;
+    if (!live || !address || !publicClient || !custodyKey) return;
     const tid = toast.show({
       status: "pending",
       title: "Preparing withdrawal",
@@ -167,13 +210,13 @@ export default function ShieldedPanel() {
         return;
       }
       if (located.spent) {
-        updateNote(chainId, address, n.commitment, { status: "spent" });
-        refreshNotes();
+        await updateNote(chainId, address, custodyKey, n.commitment, { status: "spent" });
+        await refreshNotes();
         toast.update(tid, { status: "error", title: "Already withdrawn", description: "This note has been spent." });
         return;
       }
       const leafIndex = located.leafIndex;
-      if (n.leafIndex !== leafIndex) updateNote(chainId, address, n.commitment, { leafIndex });
+      if (n.leafIndex !== leafIndex) await updateNote(chainId, address, custodyKey, n.commitment, { leafIndex });
 
       // check the association root is accepted BEFORE the ~10s proof (fail fast)
       const { root } = ix.witness(leafIndex);
@@ -210,8 +253,8 @@ export default function ShieldedPanel() {
       toast.update(tid, { description: "Submitted — awaiting confirmation", hash, chainId });
       await publicClient.waitForTransactionReceipt({ hash });
 
-      updateNote(chainId, address, n.commitment, { status: "spent", txHash: hash });
-      refreshNotes();
+      await updateNote(chainId, address, custodyKey, n.commitment, { status: "spent", txHash: hash });
+      await refreshNotes();
       usdmBal.refetch();
       toast.update(tid, {
         status: "success",
@@ -286,7 +329,12 @@ export default function ShieldedPanel() {
       <div className="mb-5 rounded-2xl border border-ink/10 bg-bg px-4 py-3.5">
         <p className="text-[0.74rem] text-ink-dim">Held privately</p>
         <p className="font-display text-2xl text-ink">
-          {displayUnits(shieldedTotal)} <span className="font-mono text-base text-ink-muted">USDM</span>
+          {locked ? (
+            <span className="text-ink-dim">•••••</span>
+          ) : (
+            displayUnits(shieldedTotal)
+          )}{" "}
+          <span className="font-mono text-base text-ink-muted">USDM</span>
         </p>
       </div>
 
@@ -295,8 +343,53 @@ export default function ShieldedPanel() {
           Shielding unlocks once the pool is live on this network. Switch to Base Sepolia to try it on
           testnet.
         </p>
+      ) : locked ? (
+        <div className="rounded-2xl border border-ink/10 bg-bg px-5 py-6 text-center">
+          <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-accent-soft">
+            <Lock className="h-5 w-5 text-accent-deep" />
+          </div>
+          <p className="font-display text-[1.05rem] font-semibold text-ink">Unlock your private balance</p>
+          <p className="mx-auto mt-1.5 max-w-xs text-[0.82rem] leading-relaxed text-ink-muted">
+            Sign once to derive your viewing key. It decrypts your notes and reveals your MaskedUSD
+            receiving address. The signature stays in your wallet — nothing is sent on-chain.
+          </p>
+          <button
+            type="button"
+            onClick={unlock}
+            disabled={unlocking}
+            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-accent py-3 text-[0.95rem] font-semibold text-white transition hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {unlocking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
+            {unlocking ? "Check your wallet…" : "Unlock"}
+          </button>
+          {idError && <p className="mt-2.5 text-[0.78rem] text-red-500">{idError}</p>}
+        </div>
       ) : (
         <>
+          {myAddress && (
+            <div className="mb-4 rounded-2xl border border-ink/10 bg-bg px-4 py-3">
+              <p className="font-mono text-[0.64rem] uppercase tracking-[0.16em] text-ink-dim">
+                Your MaskedUSD address
+              </p>
+              <div className="mt-1 flex items-center justify-between gap-2">
+                <span className="truncate font-mono text-[0.8rem] text-ink" title={myAddress}>
+                  {myAddress.slice(0, 14)}…{myAddress.slice(-8)}
+                </span>
+                <button
+                  type="button"
+                  onClick={copyAddress}
+                  className="inline-flex shrink-0 items-center gap-1 rounded-full bg-accent-soft px-2.5 py-1 text-[0.7rem] font-medium text-accent-deep transition hover:bg-accent/15"
+                >
+                  {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                  {copied ? "Copied" : "Copy"}
+                </button>
+              </div>
+              <p className="mt-1.5 text-[0.7rem] leading-relaxed text-ink-dim">
+                Share this to receive private payments. It reveals nothing about your wallet or balance.
+              </p>
+            </div>
+          )}
+
           <div className="rounded-2xl border border-ink/10 bg-bg px-4 py-3.5">
             <div className="flex items-center justify-between">
               <input
@@ -425,8 +518,9 @@ export default function ShieldedPanel() {
           <div className="mt-3 flex gap-2 rounded-2xl border border-dashed border-amber-500/30 bg-amber-500/5 px-4 py-3 text-[0.76rem] leading-relaxed text-ink-muted">
             <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
             <span>
-              Your note secret is your money — it&apos;s stored only in this browser. Back it up.
-              Unaudited testnet preview; not for real funds, not a tool for evading the law.
+              Your note secret is your money — it&apos;s encrypted in this browser under your wallet
+              signature. Back it up. Unaudited testnet preview; not for real funds, not a tool for
+              evading the law.
             </span>
           </div>
         </>

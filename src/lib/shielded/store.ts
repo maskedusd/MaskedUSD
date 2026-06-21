@@ -1,13 +1,14 @@
 // Local persistence for shielded notes. The note's ownerPriv + blinding ARE the
 // spending authority — without them the shielded funds are unrecoverable — so they
-// must survive reloads. Stored per (chainId, owner) in localStorage as decimal/hex
-// strings (JSON can't carry bigint).
+// must survive reloads. Stored per (chainId, owner) in localStorage.
 //
-// TESTNET NOTE: this is plaintext localStorage. Before any real-value (mainnet)
-// flow this must become encrypted-at-rest (wallet-signature- or passkey-derived
-// key) — see the shielded-flow plan. Fine for the unaudited Base Sepolia preview.
+// Notes are ENCRYPTED AT REST (AES-256-GCM under the wallet-derived `custodyKey`; see
+// custody.ts + identity.ts). Every read/write takes the custodyKey, so the dashboard must
+// be "unlocked" (one wallet signature) before the shielded store is usable. A wrong key
+// makes reads THROW (never silently return empty), so a bad key can't clobber good notes.
 
 import type { ShieldNote } from "./client";
+import { isEnvelope, open, seal } from "./custody";
 
 export type NoteStatus = "shielding" | "shielded" | "spent";
 
@@ -39,39 +40,82 @@ export function toStored(note: ShieldNote, extra: Partial<StoredNote> = {}): Sto
   };
 }
 
-export function loadNotes(chainId: number, owner: string): StoredNote[] {
-  if (typeof window === "undefined") return [];
+/// Best-effort migration of a legacy plaintext array to a sealed envelope. Round-trips the freshly
+/// sealed blob and byte-compares it to the originals BEFORE overwriting — so if anything is off we
+/// leave the plaintext untouched (and retry next load) rather than ever dropping a note.
+async function migrateLegacy(
+  chainId: number,
+  owner: string,
+  custodyKey: Uint8Array,
+  notes: StoredNote[],
+): Promise<void> {
   try {
-    const raw = window.localStorage.getItem(key(chainId, owner));
-    return raw ? (JSON.parse(raw) as StoredNote[]) : [];
+    const envelope = await seal(custodyKey, chainId, owner, notes);
+    const roundTrip = await open(custodyKey, chainId, owner, envelope);
+    if (JSON.stringify(roundTrip) !== JSON.stringify(notes)) return; // verify failed — keep legacy
+    window.localStorage.setItem(key(chainId, owner), envelope);
   } catch {
-    return [];
+    /* keep the legacy plaintext intact; notes were already returned to the caller */
   }
 }
 
-function writeNotes(chainId: number, owner: string, notes: StoredNote[]): void {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(key(chainId, owner), JSON.stringify(notes));
+/// Decrypt and return the notes for (chainId, owner). Empty store → []. A sealed blob that won't open
+/// with `custodyKey` THROWS (caller must not overwrite). Legacy plaintext is read and transparently
+/// upgraded to a sealed envelope.
+export async function loadNotes(
+  chainId: number,
+  owner: string,
+  custodyKey: Uint8Array,
+): Promise<StoredNote[]> {
+  if (typeof window === "undefined") return [];
+  const raw = window.localStorage.getItem(key(chainId, owner));
+  if (!raw) return [];
+  if (isEnvelope(raw)) {
+    return open(custodyKey, chainId, owner, raw); // throws on wrong key / tamper — intentional
+  }
+  // legacy plaintext array
+  const notes = JSON.parse(raw) as StoredNote[];
+  await migrateLegacy(chainId, owner, custodyKey, notes);
+  return notes;
 }
 
-/// Append a note (de-duped by commitment) and return the full list.
-export function addNote(chainId: number, owner: string, note: StoredNote): StoredNote[] {
-  const notes = loadNotes(chainId, owner).filter((n) => n.commitment !== note.commitment);
+async function writeNotes(
+  chainId: number,
+  owner: string,
+  custodyKey: Uint8Array,
+  notes: StoredNote[],
+): Promise<void> {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(key(chainId, owner), await seal(custodyKey, chainId, owner, notes));
+}
+
+/// Append a note (de-duped by commitment) and return the full list. If the existing store can't be
+/// decrypted, loadNotes throws and we never write — so a key mismatch can't erase prior notes.
+export async function addNote(
+  chainId: number,
+  owner: string,
+  custodyKey: Uint8Array,
+  note: StoredNote,
+): Promise<StoredNote[]> {
+  const notes = (await loadNotes(chainId, owner, custodyKey)).filter(
+    (n) => n.commitment !== note.commitment,
+  );
   notes.push(note);
-  writeNotes(chainId, owner, notes);
+  await writeNotes(chainId, owner, custodyKey, notes);
   return notes;
 }
 
 /// Patch the note with `commitment` and return the full list.
-export function updateNote(
+export async function updateNote(
   chainId: number,
   owner: string,
+  custodyKey: Uint8Array,
   commitment: string,
   patch: Partial<StoredNote>,
-): StoredNote[] {
-  const notes = loadNotes(chainId, owner).map((n) =>
+): Promise<StoredNote[]> {
+  const notes = (await loadNotes(chainId, owner, custodyKey)).map((n) =>
     n.commitment === commitment ? { ...n, ...patch } : n,
   );
-  writeNotes(chainId, owner, notes);
+  await writeNotes(chainId, owner, custodyKey, notes);
   return notes;
 }
