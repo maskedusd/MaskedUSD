@@ -3,6 +3,7 @@
 import MaskIcon from "@/components/MaskIcon";
 import Footer from "@/components/Footer";
 import ConnectButton from "@/components/web3/ConnectButton";
+import WalletGate from "@/components/web3/WalletGate";
 import MintRedeemCard from "@/components/app/MintRedeemCard";
 import ShieldedPanel from "@/components/app/ShieldedPanel";
 import BackingStrip from "@/components/app/BackingStrip";
@@ -10,6 +11,7 @@ import NetworkNotice from "@/components/app/NetworkNotice";
 
 export default function AppPage() {
   return (
+    <WalletGate>
     <div className="flex min-h-screen flex-col bg-bg text-ink">
       <header className="glass sticky top-0 z-40 border-b border-ink/5">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-3">
@@ -54,5 +56,6 @@ export default function AppPage() {
 
       <Footer />
     </div>
+    </WalletGate>
   );
 }
