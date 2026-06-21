@@ -3,10 +3,17 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAccount, useChainId, usePublicClient, useReadContract, useWriteContract } from "wagmi";
 import { toHex, parseEventLogs } from "viem";
-import { Shield, Loader2, Download, AlertTriangle } from "lucide-react";
-import { ERC20_ABI, SHIELDED_POOL_ABI, addressesFor, poolLive } from "@/lib/contracts";
+import { Shield, Loader2, Download, AlertTriangle, ArrowUpFromLine } from "lucide-react";
+import {
+  ERC20_ABI,
+  SHIELDED_POOL_ABI,
+  POOL_DEPLOY_BLOCK,
+  addressesFor,
+  poolLive,
+} from "@/lib/contracts";
 import { displayUnits, fromUnits, isValidAmount, toUnits } from "@/lib/format";
 import { createShieldNote, proveShield } from "@/lib/shielded/client";
+import { buildIndexer, fetchPoolLogs, proveUnshield } from "@/lib/shielded/unshield";
 import { addNote, loadNotes, toStored, updateNote, type StoredNote } from "@/lib/shielded/store";
 import { useToast } from "@/components/web3/Toaster";
 import Skeleton from "@/components/ui/Skeleton";
@@ -24,15 +31,15 @@ export default function ShieldedPanel() {
 
   const [amount, setAmount] = useState("");
   const [phase, setPhase] = useState<Phase>("idle");
+  const [withdrawing, setWithdrawing] = useState<string | null>(null);
+  const [accepting, setAccepting] = useState(false);
   const [notes, setNotes] = useState<StoredNote[]>([]);
 
   const { writeContractAsync } = useWriteContract();
   const toast = useToast();
 
-  // local note store (per chain + owner)
   const refreshNotes = useCallback(() => {
-    if (address) setNotes(loadNotes(chainId, address));
-    else setNotes([]);
+    setNotes(address ? loadNotes(chainId, address) : []);
   }, [address, chainId]);
   useEffect(() => refreshNotes(), [refreshNotes]);
 
@@ -44,11 +51,14 @@ export default function ShieldedPanel() {
     query: { enabled: !!address && live },
   });
 
+  const isGuardian =
+    !!address && !!addrs?.guardian && address.toLowerCase() === addrs.guardian.toLowerCase();
+
   const valid = isValidAmount(amount);
   const amountUnits = valid ? toUnits(amount) : 0n;
   const balance = usdmBal.data;
   const insufficient = valid && balance !== undefined && amountUnits > balance;
-  const busy = phase !== "idle";
+  const busy = phase !== "idle" || withdrawing !== null || accepting;
 
   const shieldedTotal = useMemo(
     () => notes.filter((n) => n.status !== "spent").reduce((s, n) => s + BigInt(n.value), 0n),
@@ -63,18 +73,15 @@ export default function ShieldedPanel() {
       description: "This runs locally — keys never leave your browser (~5s)",
     });
     try {
-      // 1. fresh note — persist the secret IMMEDIATELY (it is the only way to spend later)
       setPhase("proving");
       const note = createShieldNote(amountUnits);
       const commitmentHex = `0x${note.commitment.toString(16).padStart(64, "0")}`;
       addNote(chainId, address, toStored(note, { status: "shielding" }));
       refreshNotes();
 
-      // 2. prove in-browser
       const { proof } = await proveShield(note);
       const proofHex = toHex(proof);
 
-      // 3. approve USDM -> pool if needed
       const allowance = (await publicClient.readContract({
         address: addrs!.usdm,
         abi: ERC20_ABI,
@@ -93,7 +100,6 @@ export default function ShieldedPanel() {
         await publicClient.waitForTransactionReceipt({ hash: aHash });
       }
 
-      // 4. shield()
       setPhase("shielding");
       toast.update(tid, { title: "Shielding USDM", description: "Confirm in your wallet" });
       const sHash = await writeContractAsync({
@@ -105,14 +111,13 @@ export default function ShieldedPanel() {
       toast.update(tid, { description: "Submitted — awaiting confirmation", hash: sHash, chainId });
       const receipt = await publicClient.waitForTransactionReceipt({ hash: sHash });
 
-      // 5. record leaf index from the Shield event, mark shielded
       let leafIndex: number | undefined;
       try {
         const evs = parseEventLogs({ abi: SHIELDED_POOL_ABI, eventName: "Shield", logs: receipt.logs });
         const mine = evs.find((e) => `0x${e.args.commitment.toString(16).padStart(64, "0")}` === commitmentHex);
         if (mine) leafIndex = Number(mine.args.leafIndex);
       } catch {
-        /* leafIndex is best-effort; recoverable later by re-indexing */
+        /* best-effort; recoverable by re-indexing */
       }
       updateNote(chainId, address, commitmentHex, { status: "shielded", txHash: sHash, leafIndex });
       refreshNotes();
@@ -126,10 +131,125 @@ export default function ShieldedPanel() {
     } catch (e) {
       const msg = (e as { shortMessage?: string })?.shortMessage ?? "Shield failed or was rejected";
       toast.update(tid, { status: "error", title: "Shield failed", description: msg });
-      // leave the note as "shielding" in storage so the secret isn't lost
       refreshNotes();
     } finally {
       setPhase("idle");
+    }
+  }
+
+  async function doWithdraw(n: StoredNote) {
+    if (!live || !address || !publicClient) return;
+    const tid = toast.show({
+      status: "pending",
+      title: "Preparing withdrawal",
+      description: "Rebuilding the pool tree from on-chain logs…",
+    });
+    setWithdrawing(n.commitment);
+    try {
+      // rebuild the commitment tree — chunked scan (RPC caps getLogs at ~2000 blocks)
+      const logs = await fetchPoolLogs(publicClient, addrs!.pool, POOL_DEPLOY_BLOCK[chainId] ?? 0n);
+      const ix = buildIndexer(logs);
+
+      const note = {
+        value: BigInt(n.value),
+        ownerPriv: BigInt(n.ownerPriv),
+        blinding: BigInt(n.blinding),
+        assetId: BigInt(n.assetId),
+      };
+      // recover the real leaf index by commitment (don't trust stored) + classify spent
+      const located = ix.locate([note])[0];
+      if (!located) {
+        toast.update(tid, {
+          status: "error",
+          title: "Note not found in the pool",
+          description: "It may not be confirmed yet — try again in a moment.",
+        });
+        return;
+      }
+      if (located.spent) {
+        updateNote(chainId, address, n.commitment, { status: "spent" });
+        refreshNotes();
+        toast.update(tid, { status: "error", title: "Already withdrawn", description: "This note has been spent." });
+        return;
+      }
+      const leafIndex = located.leafIndex;
+      if (n.leafIndex !== leafIndex) updateNote(chainId, address, n.commitment, { leafIndex });
+
+      // check the association root is accepted BEFORE the ~10s proof (fail fast)
+      const { root } = ix.witness(leafIndex);
+      const accepted = (await publicClient.readContract({
+        address: addrs!.pool,
+        abi: SHIELDED_POOL_ABI,
+        functionName: "acceptedAssociationRoot",
+        args: [root],
+      })) as boolean;
+      if (!accepted) {
+        toast.update(tid, {
+          status: "error",
+          title: "Withdrawals not open for this root",
+          description: "A newer deposit changed the pool root — the operator must accept the current root.",
+        });
+        return;
+      }
+
+      toast.update(tid, { title: "Proving withdrawal", description: "Zero-knowledge proof in your browser (~10s)" });
+      const { proof, nullifier } = await proveUnshield(ix, { ...note, leafIndex }, {
+        to: address,
+        payoutAmount: note.value,
+        fee: 0n,
+        feeRecipient: address,
+      });
+
+      toast.update(tid, { title: "Withdrawing", description: "Confirm in your wallet" });
+      const hash = await writeContractAsync({
+        address: addrs!.pool,
+        abi: SHIELDED_POOL_ABI,
+        functionName: "unshield",
+        args: [root, root, nullifier, address, note.value, 0n, address, toHex(proof)],
+      });
+      toast.update(tid, { description: "Submitted — awaiting confirmation", hash, chainId });
+      await publicClient.waitForTransactionReceipt({ hash });
+
+      updateNote(chainId, address, n.commitment, { status: "spent", txHash: hash });
+      refreshNotes();
+      usdmBal.refetch();
+      toast.update(tid, {
+        status: "success",
+        title: `Withdrew ${displayUnits(note.value)} USDM`,
+        description: "Back to public USDM in your wallet.",
+      });
+    } catch (e) {
+      const msg = (e as { shortMessage?: string })?.shortMessage ?? "Withdraw failed or was rejected";
+      toast.update(tid, { status: "error", title: "Withdraw failed", description: msg });
+    } finally {
+      setWithdrawing(null);
+    }
+  }
+
+  async function acceptCurrentRoot() {
+    if (!live || !address || !publicClient || busy) return;
+    setAccepting(true);
+    const tid = toast.show({ status: "pending", title: "Accepting association root", description: "Confirm in your wallet" });
+    try {
+      const root = (await publicClient.readContract({
+        address: addrs!.pool,
+        abi: SHIELDED_POOL_ABI,
+        functionName: "currentRoot",
+      })) as bigint;
+      const hash = await writeContractAsync({
+        address: addrs!.pool,
+        abi: SHIELDED_POOL_ABI,
+        functionName: "acceptAssociationRoot",
+        args: [root],
+      });
+      toast.update(tid, { description: "Submitted", hash, chainId });
+      await publicClient.waitForTransactionReceipt({ hash });
+      toast.update(tid, { status: "success", title: "Association root accepted", description: "Withdrawals are open for the current root." });
+    } catch (e) {
+      const msg = (e as { shortMessage?: string })?.shortMessage ?? "rejected";
+      toast.update(tid, { status: "error", title: "Accept failed", description: msg });
+    } finally {
+      setAccepting(false);
     }
   }
 
@@ -163,7 +283,6 @@ export default function ShieldedPanel() {
         </span>
       </div>
 
-      {/* shielded total */}
       <div className="mb-5 rounded-2xl border border-ink/10 bg-bg px-4 py-3.5">
         <p className="text-[0.74rem] text-ink-dim">Held privately</p>
         <p className="font-display text-2xl text-ink">
@@ -178,7 +297,6 @@ export default function ShieldedPanel() {
         </p>
       ) : (
         <>
-          {/* amount */}
           <div className="rounded-2xl border border-ink/10 bg-bg px-4 py-3.5">
             <div className="flex items-center justify-between">
               <input
@@ -218,7 +336,7 @@ export default function ShieldedPanel() {
             disabled={!isConnected || !valid || insufficient || busy}
             className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-accent py-3.5 text-[0.95rem] font-semibold text-white transition hover:bg-accent-deep disabled:cursor-not-allowed disabled:bg-ink/15 disabled:text-ink-dim"
           >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Shield className="h-4 w-4" />}
+            {phase !== "idle" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Shield className="h-4 w-4" />}
             {cta}
           </button>
 
@@ -228,13 +346,10 @@ export default function ShieldedPanel() {
             </p>
           )}
 
-          {/* notes */}
           {notes.length > 0 && (
             <div className="mt-5">
               <div className="mb-2 flex items-center justify-between">
-                <p className="font-mono text-[0.66rem] uppercase tracking-[0.16em] text-ink-dim">
-                  Your notes
-                </p>
+                <p className="font-mono text-[0.66rem] uppercase tracking-[0.16em] text-ink-dim">Your notes</p>
                 <button
                   type="button"
                   onClick={exportNotes}
@@ -250,22 +365,34 @@ export default function ShieldedPanel() {
                   .map((n) => (
                     <li
                       key={n.commitment}
-                      className="flex items-center justify-between rounded-xl border border-ink/8 bg-bg px-3 py-2 text-[0.78rem]"
+                      className="flex items-center justify-between gap-2 rounded-xl border border-ink/8 bg-bg px-3 py-2 text-[0.78rem]"
                     >
                       <span className="font-mono text-ink-muted">{short(n.commitment)}</span>
                       <span className="flex items-center gap-2">
                         <span className="text-ink">{displayUnits(BigInt(n.value))} USDM</span>
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-[0.66rem] font-medium ${
-                            n.status === "shielded"
-                              ? "bg-emerald-500/10 text-emerald-600"
-                              : n.status === "spent"
-                                ? "bg-ink/10 text-ink-dim"
-                                : "bg-amber-500/10 text-amber-600"
-                          }`}
-                        >
-                          {n.status}
-                        </span>
+                        {n.status === "shielded" ? (
+                          <button
+                            type="button"
+                            onClick={() => doWithdraw(n)}
+                            disabled={busy}
+                            className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2.5 py-0.5 text-[0.7rem] font-medium text-accent-deep transition hover:bg-accent/15 disabled:opacity-50"
+                          >
+                            {withdrawing === n.commitment ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <ArrowUpFromLine className="h-3 w-3" />
+                            )}
+                            Withdraw
+                          </button>
+                        ) : (
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[0.66rem] font-medium ${
+                              n.status === "spent" ? "bg-ink/10 text-ink-dim" : "bg-amber-500/10 text-amber-600"
+                            }`}
+                          >
+                            {n.status}
+                          </span>
+                        )}
                       </span>
                     </li>
                   ))}
@@ -273,7 +400,29 @@ export default function ShieldedPanel() {
             </div>
           )}
 
-          <div className="mt-5 flex gap-2 rounded-2xl border border-dashed border-amber-500/30 bg-amber-500/5 px-4 py-3 text-[0.76rem] leading-relaxed text-ink-muted">
+          {isGuardian && (
+            <div className="mt-4 rounded-2xl border border-ink/10 bg-bg px-4 py-3">
+              <p className="font-mono text-[0.64rem] uppercase tracking-[0.16em] text-ink-dim">Operator</p>
+              <p className="mt-1 text-[0.76rem] text-ink-muted">
+                Accept the current association root so shielded notes can be withdrawn.
+              </p>
+              <button
+                type="button"
+                onClick={acceptCurrentRoot}
+                disabled={busy}
+                className="mt-2 w-full rounded-xl border border-accent/30 bg-accent-soft py-2 text-[0.8rem] font-medium text-accent-deep transition hover:bg-accent/15 disabled:opacity-50"
+              >
+                Accept current root
+              </button>
+            </div>
+          )}
+
+          <p className="mt-4 text-[0.72rem] leading-relaxed text-ink-dim">
+            Withdrawals require the operator to accept the current pool root; a deposit after yours can
+            briefly pause exits until it&apos;s re-accepted.
+          </p>
+
+          <div className="mt-3 flex gap-2 rounded-2xl border border-dashed border-amber-500/30 bg-amber-500/5 px-4 py-3 text-[0.76rem] leading-relaxed text-ink-muted">
             <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
             <span>
               Your note secret is your money — it&apos;s stored only in this browser. Back it up.

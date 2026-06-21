@@ -24,6 +24,11 @@ export const VAULT_ABI = parseAbi(["function totalBacking() view returns (uint25
 // the leaf index assigned to the commitment (needed later to spend/unshield it).
 export const SHIELDED_POOL_ABI = parseAbi([
   "function shield(uint256 commitment, uint256 amount, bytes proof)",
+  "function unshield(uint256 root, uint256 associationRoot, uint256 nullifier, address to, uint256 amount, uint256 fee, address feeRecipient, bytes proof)",
+  "function currentRoot() view returns (uint256)",
+  "function acceptedAssociationRoot(uint256 root) view returns (bool)",
+  "function nullifierSpent(uint256 nullifier) view returns (bool)",
+  "function acceptAssociationRoot(uint256 root)", // guardian-only
   "event Shield(uint256 indexed commitment, uint256 indexed leafIndex, uint256 amount)",
 ]);
 
@@ -34,9 +39,17 @@ export interface Addresses {
   mintRamp: `0x${string}`;
   redeemRamp: `0x${string}`;
   pool: `0x${string}`;
+  guardian: `0x${string}`; // can accept association roots (gates unshield) + pause
 }
 
 export const ZERO = "0x0000000000000000000000000000000000000000" as const;
+
+// Block the pool was deployed at, per chain — the lower bound for scanning Shield/
+// PrivateTransfer logs to rebuild the commitment tree (avoids scanning from genesis).
+export const POOL_DEPLOY_BLOCK: Record<number, bigint> = {
+  [baseSepolia.id]: 43104645n,
+  [base.id]: 0n,
+};
 
 // Per-chain addresses. USDC is the canonical Circle address on each network; the MaskedUSD contracts
 // are ZERO until deployed (the UI shows a "not yet deployed" state for that chain — see isDeployed).
@@ -49,6 +62,7 @@ export const ADDRESSES: Record<number, Addresses> = {
     mintRamp: "0x16154843AB66ca01CD14d6f36566479FAA2A3Df3",
     redeemRamp: "0x6D6E4c124bCb94EA8364FAC4691A779e68d23CDb",
     pool: "0x0e694f3243a89a91597A35B188F91750b1F1CDe6",
+    guardian: "0xd656427d14052adA99B238Fe868A76a15ebC99bE",
   },
   [base.id]: {
     usdc: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // Base mainnet USDC (native)
@@ -57,6 +71,7 @@ export const ADDRESSES: Record<number, Addresses> = {
     mintRamp: ZERO,
     redeemRamp: ZERO,
     pool: ZERO,
+    guardian: ZERO,
   },
 };
 
