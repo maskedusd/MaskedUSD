@@ -8,7 +8,7 @@ import MaskIcon from "@/components/MaskIcon";
 const WALLETS = [
   { label: "MetaMask", icon: "/wallets/metamask.svg", match: "metamask" },
   { label: "Coinbase Wallet", icon: "/wallets/coinbase.svg", match: "coinbase" },
-  { label: "Phantom", icon: "/wallets/phantom.png", match: "phantom" },
+  { label: "Phantom", icon: "/wallets/phantom.svg", match: "phantom" },
 ];
 
 export default function WalletConnectModal() {

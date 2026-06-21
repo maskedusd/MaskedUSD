@@ -15,14 +15,18 @@ export interface ShieldNote {
   commitment: bigint;
 }
 
-/// A uniformly-random canonical BN254 field element (256 random bits reduced mod
-/// FIELD_SIZE — negligible modulo bias). Used for the note's spending key + blinding.
+/// A uniformly-random canonical BN254 field element via REJECTION SAMPLING (no modulo bias) — the
+/// note's spending key (ownerPriv) is born here, so it must be a true uniform canonical element: a
+/// non-canonical value would pass through encryption/memo-posting but then make the proof build throw.
+/// FIELD_SIZE ≈ 2^254, so the reject rate is ~6%.
 export function randomFieldElement(): bigint {
-  const bytes = new Uint8Array(32);
-  crypto.getRandomValues(bytes);
-  let x = 0n;
-  for (const b of bytes) x = (x << 8n) | BigInt(b);
-  return x % FIELD_SIZE;
+  for (;;) {
+    const bytes = new Uint8Array(32);
+    crypto.getRandomValues(bytes);
+    let x = 0n;
+    for (const b of bytes) x = (x << 8n) | BigInt(b);
+    if (x < FIELD_SIZE) return x;
+  }
 }
 
 /// Build a fresh shielded note for `value` (6-dp base units). The ownerPriv IS the
