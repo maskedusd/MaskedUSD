@@ -19,6 +19,14 @@ export const MINT_RAMP_ABI = parseAbi(["function mint(uint256 amount)"]);
 export const REDEEM_RAMP_ABI = parseAbi(["function redeem(uint256 amount, address to)"]);
 export const VAULT_ABI = parseAbi(["function totalBacking() view returns (uint256)"]);
 
+// ShieldedPool: shield public USDM into a private note commitment. Approve USDM to
+// the POOL first, then shield(commitment, amount, proof). The Shield event carries
+// the leaf index assigned to the commitment (needed later to spend/unshield it).
+export const SHIELDED_POOL_ABI = parseAbi([
+  "function shield(uint256 commitment, uint256 amount, bytes proof)",
+  "event Shield(uint256 indexed commitment, uint256 indexed leafIndex, uint256 amount)",
+]);
+
 export interface Addresses {
   usdc: `0x${string}`;
   usdm: `0x${string}`;
