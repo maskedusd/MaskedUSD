@@ -4,7 +4,7 @@ import { motion, useReducedMotion, type Variants } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import MaskIcon from "./MaskIcon";
 import SmoothScrollLink from "./SmoothScrollLink";
-import { XIcon, TelegramIcon } from "./BrandIcons";
+import { XIcon, TelegramIcon, GitHubIcon } from "./BrandIcons";
 
 /**
  * Footer — the closing band. Adapted from a generic 4-column footer to the
@@ -21,6 +21,7 @@ import { XIcon, TelegramIcon } from "./BrandIcons";
 
 const X_URL = "https://x.com/MaskedUSD";
 const TELEGRAM_URL = "https://t.me/maskedusd";
+const GITHUB_URL = "https://github.com/maskedusd";
 
 const EASE_OUT: [number, number, number, number] = [0.16, 0.84, 0.3, 1];
 
@@ -153,6 +154,15 @@ export default function Footer() {
               >
                 <TelegramIcon size={17} />
               </a>
+              <a
+                href={GITHUB_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="MaskedUSD on GitHub"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-ink/10 bg-surface/60 text-ink-muted transition-all hover:scale-105 hover:border-accent/30 hover:text-ink"
+              >
+                <GitHubIcon size={17} />
+              </a>
             </div>
           </motion.div>
 
@@ -203,6 +213,20 @@ export default function Footer() {
                 >
                   Telegram
                   <span className="status-dot" aria-hidden="true" />
+                </a>
+              </li>
+              <li>
+                <a
+                  href={GITHUB_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group inline-flex items-center gap-1.5 text-sm text-ink-muted transition-colors hover:text-ink"
+                >
+                  GitHub
+                  <ArrowUpRight
+                    size={13}
+                    className="-translate-x-1 translate-y-0.5 opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:translate-y-0 group-hover:opacity-100"
+                  />
                 </a>
               </li>
               <li>
