@@ -1,13 +1,23 @@
 // Browser-side unshield: rebuild the commitment tree from on-chain logs, then prove
-// the unshield circuit for one note. v1 self-association — the association witness IS
-// the commitment-tree membership, so association_root == the commitment root (which
-// the guardian must have accepted on-chain before unshield() will succeed).
+// the unshield circuit for one note. The membership witness (merkle_root_pub / path)
+// is the full commitment tree; the association witness (association_root / assoc_path)
+// comes from the D4 association set — the commitment stream minus the published
+// exclusion ledger, matured past D (see ./association). On testnet there is no ASP feed
+// and no maturation window, so by the lossless-migration identity the association root
+// EQUALS the commitment root the guardian has accepted on-chain, and unshield() verifies.
 //
-// indexer/events/notes are pure + SSR-safe; prove.ts (bb.js WASM) is lazy-imported.
+// indexer/events/notes/association are pure + SSR-safe; prove.ts (bb.js WASM) is lazy-imported.
 
 import { PoolIndexer } from "./indexer";
 import { decodePoolLogs, type RawLog } from "./events";
 import { nullifier as noteNullifier } from "./notes";
+import {
+  buildAssociationSet,
+  associationWitness,
+  activeExclusions,
+  type AssociationSet,
+  type LedgerOp,
+} from "./association";
 
 /// Replay the pool's Shield/PrivateTransfer/Unshield logs (in on-chain order) into a
 /// fresh indexer that can produce a note's membership witness.
@@ -76,17 +86,64 @@ export interface UnshieldNote {
 
 export interface UnshieldResult {
   proof: Uint8Array;
-  root: bigint; // == associationRoot (v1 self-association)
+  root: bigint; // the full commitment-tree root (merkle_root_pub)
+  associationRoot: bigint; // the D4 association root (== root on testnet, see below)
   nullifier: bigint;
+}
+
+/// Inputs that define the association set beyond the commitment stream itself: the published exclusion
+/// ledger and the maturation window. On testnet NEITHER is live — there is no ASP feed deployed and no
+/// maturation window — so the default is the lossless-migration identity (empty ledger, maturation 0),
+/// under which the association root EQUALS the commitment root. When the ASP feed turns on, pass the
+/// folded exclusion ledger + the real maturation window + per-leaf insert timestamps; the same code
+/// then yields the (subset) association root + assoc_path with no further change.
+export interface AssociationContext {
+  /// The exclusion ledger as published by the ASP (folded internally by seq). Empty on testnet.
+  ledger?: readonly LedgerOp[];
+  /// Maturation buffer D in seconds. 0 on testnet (no maturation window).
+  maturationSeconds?: number;
+  /// "As-of" unix seconds the root is computed for. Only consulted when maturationSeconds > 0.
+  asOf?: number;
+  /// Per-leaf-index insert timestamps (unix seconds). Only consulted when maturationSeconds > 0; with
+  /// D = 0 every leaf is mature regardless, so timestamps are not needed.
+  leafTimestamps?: readonly number[];
+}
+
+/// Build the current D4 association set from an indexer's commitment stream. With maturation disabled
+/// (the testnet default) every leaf is mature and timestamps are irrelevant, so the result is the full
+/// commitment set minus any active exclusions — equal to the commitment-tree root when the ledger is
+/// empty. `associationWitness(set, commitment)` then yields the assoc_index / assoc_path to prove.
+export function buildAssociation(ix: PoolIndexer, ctx: AssociationContext = {}): AssociationSet {
+  const maturationSeconds = ctx.maturationSeconds ?? 0;
+  const excluded = activeExclusions(ctx.ledger ?? []);
+  if (maturationSeconds === 0) {
+    // Maturation disabled: every leaf is mature, timestamps irrelevant.
+    const leaves = ix.leaves.map((commitment) => ({ commitment, t0: 0 }));
+    return buildAssociationSet({ leaves, excluded, maturationSeconds: 0, asOf: 0 });
+  }
+  const asOf = ctx.asOf ?? 0;
+  const leaves = ix.leaves.map((commitment, i) => ({ commitment, t0: ctx.leafTimestamps?.[i] ?? 0 }));
+  return buildAssociationSet({ leaves, excluded, maturationSeconds, asOf });
 }
 
 /// Prove an unshield: withdraw `note`'s full value to `to`, paying `fee` to
 /// `feeRecipient` (fee 0 / feeRecipient == to for a direct, relayer-less withdrawal).
 /// payout + fee must equal the note's value (enforced in-circuit).
+///
+/// The membership witness (merkle_root_pub / path) is the full commitment tree; the association witness
+/// (association_root / assoc_index / assoc_path) comes from the D4 association set. Pass `opts.association`
+/// when you have one already built (avoids rebuilding); otherwise the testnet identity is used (empty
+/// ledger, no maturation → association root == commitment root).
 export async function proveUnshield(
   ix: PoolIndexer,
   note: UnshieldNote,
-  opts: { to: `0x${string}`; payoutAmount: bigint; fee: bigint; feeRecipient: `0x${string}` },
+  opts: {
+    to: `0x${string}`;
+    payoutAmount: bigint;
+    fee: bigint;
+    feeRecipient: `0x${string}`;
+    association?: AssociationSet;
+  },
 ): Promise<UnshieldResult> {
   const [{ generateHonkProof }, { toHex32 }] = await Promise.all([
     import("./prove"),
@@ -95,11 +152,24 @@ export async function proveUnshield(
   const circuit = (await unshieldCircuit()) as Parameters<typeof generateHonkProof>[0];
 
   const { root, path } = ix.witness(note.leafIndex);
+
+  // Association witness: prove the note's commitment is in the (matured, non-excluded) association set.
+  // Use the on-chain leaf value so the assoc path is for exactly the leaf the membership path proves.
+  const commitment = ix.leaves[note.leafIndex];
+  if (commitment === undefined) throw new Error(`no leaf at index ${note.leafIndex}`);
+  const association = opts.association ?? buildAssociation(ix);
+  const assoc = associationWitness(association, commitment);
+  if (!assoc) {
+    throw new Error(
+      "this note is not in the current association set (excluded, or not yet matured) — it cannot be withdrawn",
+    );
+  }
+
   const nul = noteNullifier(note.ownerPriv, BigInt(note.leafIndex));
   const leaf = toHex32(BigInt(note.leafIndex));
   const inputs = {
     merkle_root_pub: toHex32(root),
-    association_root: toHex32(root), // v1: pool tree doubles as the association set
+    association_root: toHex32(assoc.root),
     nullifier: toHex32(nul),
     payout_amount: toHex32(opts.payoutAmount),
     payout_address: toHex32(BigInt(opts.to)),
@@ -111,10 +181,10 @@ export async function proveUnshield(
     blinding: toHex32(note.blinding),
     leaf_index: leaf,
     path: path.map(toHex32),
-    assoc_index: leaf,
-    assoc_path: path.map(toHex32),
+    assoc_index: toHex32(BigInt(assoc.index)),
+    assoc_path: assoc.path.map(toHex32),
   };
 
   const { proof } = await generateHonkProof(circuit, inputs);
-  return { proof, root, nullifier: nul };
+  return { proof, root, associationRoot: assoc.root, nullifier: nul };
 }

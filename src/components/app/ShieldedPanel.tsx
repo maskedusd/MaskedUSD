@@ -27,7 +27,7 @@ import {
 } from "@/lib/contracts";
 import { displayUnits, fromUnits, isValidAmount, toUnits } from "@/lib/format";
 import { createShieldNote, proveShield } from "@/lib/shielded/client";
-import { buildIndexer, fetchPoolLogs, proveUnshield } from "@/lib/shielded/unshield";
+import { buildIndexer, fetchPoolLogs, proveUnshield, buildAssociation } from "@/lib/shielded/unshield";
 import { selectTwoInputs, buildOutputs, proveTransfer } from "@/lib/shielded/transfer";
 import { decodeMemoLogs, discoverReceivedNotes } from "@/lib/shielded/discovery";
 import {
@@ -256,11 +256,14 @@ export default function ShieldedPanel() {
       if (n.leafIndex !== leafIndex) await updateNote(chainId, address, custodyKey, n.commitment, { leafIndex });
 
       const { root } = ix.witness(leafIndex);
+      // D4 association set (testnet: empty exclusion ledger + no maturation → root == commitment root).
+      const association = buildAssociation(ix);
+      const associationRoot = association.root;
       const accepted = (await publicClient.readContract({
         address: addrs!.pool,
         abi: SHIELDED_POOL_ABI,
         functionName: "acceptedAssociationRoot",
-        args: [root],
+        args: [associationRoot],
       })) as boolean;
       if (!accepted) {
         toast.update(tid, {
@@ -277,6 +280,7 @@ export default function ShieldedPanel() {
         payoutAmount: note.value,
         fee: 0n,
         feeRecipient: address,
+        association,
       });
 
       toast.update(tid, { title: "Withdrawing", description: "Confirm in your wallet" });
@@ -284,7 +288,7 @@ export default function ShieldedPanel() {
         address: addrs!.pool,
         abi: SHIELDED_POOL_ABI,
         functionName: "unshield",
-        args: [root, root, nullifier, address, note.value, 0n, address, toHex(proof)],
+        args: [root, associationRoot, nullifier, address, note.value, 0n, address, toHex(proof)],
       });
       toast.update(tid, { description: "Submitted — awaiting confirmation", hash, chainId });
       await publicClient.waitForTransactionReceipt({ hash });
