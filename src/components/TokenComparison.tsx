@@ -43,12 +43,13 @@ function ContractField({ align = "left" }: { align?: "left" | "right" }) {
  * single frame reinforces the "one protocol" thesis. On mobile the two panels
  * stack as separate cards.
  *
- * Framing: the two tokens are COMPLEMENTARY, not competitors — $MUSD is the
- * access/utility layer for the $USDM product ("not just a Clanker token").
+ * Framing: the two tokens are COMPLEMENTARY, not competitors — but distinct.
+ * $USDM is the backed product; $MUSD is a separate, volatile, UNBACKED
+ * ecosystem/utility token (not a second stablecoin, can go to zero).
  *
  * Honesty: $USDM mechanism is present-tense. $MUSD is pre-launch ("Launching on
- * Clanker") and its utility is labelled PLANNED; NO yield/APY numbers, no
- * live/deployed/audited claims.
+ * Clanker, ~1 day after $USDM"), utility labelled PLANNED, with a persistent
+ * "volatile · not backed" disclaimer; NO yield/APY, no live/deployed/audited claims.
  */
 
 const EASE_OUT: [number, number, number, number] = [0.16, 0.84, 0.3, 1];
@@ -129,18 +130,19 @@ function MusdPanel() {
       </header>
 
       <p className="mt-6 max-w-[22rem] text-[0.95rem] font-medium leading-snug text-ink">
-        The community and access layer for the protocol.
+        The ecosystem and access layer for the protocol.
       </p>
       <p className="mt-2 max-w-[22rem] text-sm leading-relaxed text-ink-muted">
-        Launching on Clanker. Holding $MUSD is how you plug into the $USDM
-        product — not just a Clanker token.
+        Launching on Clanker, ~1 day after $USDM. A volatile, unbacked ecosystem
+        token — not a second stablecoin. It plugs you into the protocol&apos;s
+        utility and community.
       </p>
 
       <ul className="mt-6 space-y-2.5">
         {[
-          "Community & distribution layer",
-          "Fee discounts on USDC → $USDM (planned)",
-          "Public, tradable token on Base",
+          "Ecosystem & access layer",
+          "Capped fee discount on the ramp (planned)",
+          "Volatile · not backed · can go to zero",
         ].map((attr) => (
           <li
             key={attr}
@@ -158,7 +160,7 @@ function MusdPanel() {
       <div className="mt-auto flex flex-col items-end gap-4 pt-7">
         <ContractField align="right" />
         <span className="inline-flex w-fit items-center gap-2 rounded-full border border-accent/25 bg-accent-soft px-3 py-1.5 font-mono text-[0.6rem] uppercase tracking-[0.14em] text-accent-deep">
-          Planned utility
+          Volatile &middot; Not backed
         </span>
       </div>
     </article>
@@ -313,7 +315,7 @@ export default function TokenComparison() {
           viewport={{ once: true, amount: 0.5 }}
           className="mt-8 text-center font-mono text-[0.72rem] uppercase tracking-[0.16em] text-ink-dim"
         >
-          $MUSD is the access layer for the $USDM product
+          $MUSD is a separate, volatile, unbacked token — not $USDM, not a stablecoin
         </motion.p>
       </div>
     </section>

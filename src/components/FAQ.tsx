@@ -33,7 +33,15 @@ const FAQS = [
   },
   {
     q: "What's the difference between $USDM and $MUSD?",
-    a: "$USDM is the private dollar you hold and spend. $MUSD is the access & utility layer (launching on Clanker) that plugs you into the protocol. They're complementary, not competitors.",
+    a: "$USDM is the private dollar — 1:1 USDC-backed, the product you hold and spend. $MUSD is a separate ecosystem/utility token launching on Clanker: it's volatile, NOT backed, NOT a stablecoin, and can go to zero. They're complementary, not competitors — and never the same thing.",
+  },
+  {
+    q: "Is $MUSD backed, or a second stablecoin?",
+    a: "No. $MUSD is not backed by anything and is not a stablecoin — it's a volatile ecosystem/utility token that can go to zero. Only $USDM is 1:1 USDC-backed. A move in the $MUSD price can never touch your $USDM 1:1 redemption.",
+  },
+  {
+    q: "Does holding or staking $MUSD pay yield?",
+    a: "No. $MUSD has no yield, no APY, and no staking returns, and it never pays out $USDM. Its only role is utility, access, and community — a capped discount on protocol fees for holders, and a one-time airdrop for early users. Treat it as a volatile token, not an income source.",
   },
   {
     q: "What is dZK Proof?",
