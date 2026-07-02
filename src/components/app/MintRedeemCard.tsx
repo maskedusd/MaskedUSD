@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Loader2 } from "lucide-react";
 import { useAccount, useChainId, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import {
   ERC20_ABI,
@@ -56,6 +57,9 @@ export default function MintRedeemCard() {
 
   const { writeContract, data: hash, isPending, error, reset } = useWriteContract();
   const { isLoading: confirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+  // Bridges the gap between a confirmed tx and the refetched reads landing — without it the
+  // stale allowance briefly re-enables "Approve USDC" and a user can fire a duplicate approval.
+  const [settling, setSettling] = useState(false);
 
   // transaction toasts
   const toast = useToast();
@@ -70,19 +74,20 @@ export default function MintRedeemCard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hash]);
 
-  // confirmed → refresh reads, clear the field, finish the toast
+  // confirmed → hold busy until the reads refetch (see `settling`), then finish the toast
   useEffect(() => {
-    if (isSuccess) {
-      usdcBal.refetch();
-      usdmBal.refetch();
-      allowance.refetch();
-      if (!needsApproval) setAmount("");
+    if (!isSuccess) return;
+    setSettling(true);
+    const wasApproval = needsApproval;
+    void Promise.allSettled([usdcBal.refetch(), usdmBal.refetch(), allowance.refetch()]).then(() => {
+      if (!wasApproval) setAmount("");
       if (toastId.current) {
         toast.update(toastId.current, { status: "success", title: labels.current.done, description: undefined });
         toastId.current = null;
       }
       reset();
-    }
+      setSettling(false);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSuccess]);
 
@@ -127,16 +132,16 @@ export default function MintRedeemCard() {
     }
   }
 
-  const busy = isPending || confirming;
+  const busy = isPending || confirming || settling;
   const cta = useMemo(() => {
     if (!isConnected) return "Connect wallet first";
     if (!live) return "Not yet deployed on this network";
     if (!valid) return mode === "mint" ? "Enter USDC amount" : "Enter USDM amount";
     if (insufficient) return "Insufficient balance";
-    if (busy) return confirming ? "Confirming…" : "Check wallet…";
+    if (busy) return confirming ? "Confirming…" : settling ? "Finalizing…" : "Check wallet…";
     if (mode === "mint") return needsApproval ? "Approve USDC" : "Mint USDM";
     return "Redeem USDC";
-  }, [isConnected, live, valid, insufficient, busy, confirming, mode, needsApproval]);
+  }, [isConnected, live, valid, insufficient, busy, confirming, settling, mode, needsApproval]);
 
   const disabled = !isConnected || !live || !valid || insufficient || busy;
 
@@ -211,7 +216,14 @@ export default function MintRedeemCard() {
         disabled={disabled}
         className="mt-5 w-full rounded-2xl bg-accent py-3.5 text-[0.95rem] font-semibold text-white transition hover:bg-accent-deep disabled:cursor-not-allowed disabled:bg-ink/15 disabled:text-ink-dim"
       >
-        {cta}
+        {busy ? (
+          <span className="inline-flex items-center justify-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            {cta}
+          </span>
+        ) : (
+          cta
+        )}
       </button>
     </div>
   );
