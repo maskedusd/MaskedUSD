@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useAccount, useChainId, useDisconnect, useSwitchChain } from "wagmi";
-import { baseSepolia } from "wagmi/chains";
+import { base } from "wagmi/chains";
 import { useRouter } from "next/navigation";
 import { Check, ChevronDown, Copy, ExternalLink, LogOut } from "lucide-react";
 import { truncateAddress } from "@/lib/format";
@@ -31,8 +31,8 @@ export default function ConnectButton() {
 
   if (!isConnected || !address) return null;
 
-  // pre-mainnet: anything other than Base Sepolia is "wrong network"
-  const wrongNetwork = chain != null && chainId !== baseSepolia.id;
+  // mainnet-live: anything other than Base is "wrong network"
+  const wrongNetwork = chain != null && chainId !== base.id;
 
   async function copyAddress() {
     try {
@@ -58,10 +58,10 @@ export default function ConnectButton() {
       {wrongNetwork && (
         <button
           type="button"
-          onClick={() => switchChain({ chainId: baseSepolia.id })}
+          onClick={() => switchChain({ chainId: base.id })}
           className="rounded-full border border-amber-400/40 bg-amber-50 px-3 py-1.5 text-[0.78rem] font-medium text-amber-700 transition hover:bg-amber-100"
         >
-          Switch to Base Sepolia
+          Switch to Base
         </button>
       )}
 

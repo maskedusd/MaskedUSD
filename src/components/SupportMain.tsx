@@ -206,9 +206,9 @@ export default function SupportMain() {
             variants={item}
             className="mt-5 max-w-xl text-base leading-relaxed text-ink-muted sm:text-lg"
           >
-            We&apos;re pre-launch and building in the open. The quickest answers
-            come from the community — browse the channels below, or reach out
-            directly.
+            We&apos;re live on Base and building in the open. The quickest
+            answers come from the community — browse the channels below, or
+            reach out directly.
           </motion.p>
 
           <motion.div
@@ -254,8 +254,8 @@ export default function SupportMain() {
               Pick a channel.
             </h2>
             <p className="mt-4 max-w-xl text-base leading-relaxed text-ink-muted">
-              No ticket queues yet — we&apos;re small and pre-launch, so the
-              Telegram is the fastest way to reach a human.
+              No ticket queues yet — we&apos;re a small team, so the Telegram
+              is the fastest way to reach a human.
             </p>
           </motion.div>
 
@@ -276,7 +276,7 @@ export default function SupportMain() {
                 ch={{
                   icon: Compass,
                   title: "Docs",
-                  desc: "Developer & protocol documentation. Landing alongside the testnet.",
+                  desc: "Developer & protocol documentation. In the works.",
                   soon: true,
                 }}
               />

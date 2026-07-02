@@ -27,7 +27,7 @@ export default function AppPage() {
         <div className="mx-auto max-w-5xl px-5 py-12 sm:py-16">
           <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-ink/10 bg-surface px-3 py-1 text-[0.72rem] font-medium text-ink-muted">
             <span className="status-dot inline-block h-1.5 w-1.5 rounded-full bg-accent" />
-            Base Sepolia · testnet preview
+            Live on Base
           </div>
           <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
             Your private dollar
@@ -48,8 +48,8 @@ export default function AppPage() {
           </div>
 
           <p className="mt-8 max-w-2xl text-[0.74rem] leading-relaxed text-ink-dim">
-            Design-stage preview — unaudited and not deployed to mainnet. Testnet contract addresses are
-            wired in as they ship. Nothing here is financial advice or an offer.
+            Live on Base — immutable, non-custodial contracts, verified on Basescan. Nothing here is
+            financial advice or an offer.
           </p>
         </div>
       </main>

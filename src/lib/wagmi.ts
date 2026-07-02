@@ -2,13 +2,13 @@ import { http, createConfig } from "wagmi";
 import { base, baseSepolia } from "wagmi/chains";
 import { injected, coinbaseWallet } from "wagmi/connectors";
 
-// MaskedUSD launches on Base; Base Sepolia is the testnet target until mainnet contracts ship.
-// Sepolia first in the list = the default chain the dApp prompts for while we're pre-mainnet.
+// MaskedUSD is live on Base mainnet (contracts deployed 2026-06-29); Base Sepolia stays wired as
+// the testnet. Base first in the list = the default chain the dApp prompts for.
 //
 // Exactly three connectors — MetaMask, Coinbase Wallet, Phantom — with EIP-6963 auto-discovery off
 // so the connect modal shows only these (not every injected provider the browser happens to expose).
 export const config = createConfig({
-  chains: [baseSepolia, base],
+  chains: [base, baseSepolia],
   multiInjectedProviderDiscovery: false,
   connectors: [
     injected({ target: "metaMask" }),

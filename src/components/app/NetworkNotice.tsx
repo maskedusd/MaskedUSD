@@ -23,10 +23,10 @@ export default function NetworkNotice() {
         <span>Unsupported network.</span>
         <button
           type="button"
-          onClick={() => switchChain({ chainId: baseSepolia.id })}
+          onClick={() => switchChain({ chainId: base.id })}
           className="font-medium underline underline-offset-2"
         >
-          Switch to Base Sepolia
+          Switch to Base
         </button>
       </Banner>
     );

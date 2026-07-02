@@ -6,7 +6,7 @@ import Footer from "@/components/Footer";
 export const metadata: Metadata = {
   title: "Support",
   description:
-    "Get help with MaskedUSD. Pre-launch, community-first support — reach the team on Telegram, follow updates on X, or browse the FAQ.",
+    "Get help with MaskedUSD. Community-first support — reach the team on Telegram, follow updates on X, or browse the FAQ.",
 };
 
 export default function SupportPage() {

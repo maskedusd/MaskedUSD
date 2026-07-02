@@ -61,7 +61,7 @@ export const ZERO = "0x0000000000000000000000000000000000000000" as const;
 // PrivateTransfer logs to rebuild the commitment tree (avoids scanning from genesis).
 export const POOL_DEPLOY_BLOCK: Record<number, bigint> = {
   [baseSepolia.id]: 43104645n,
-  [base.id]: 0n,
+  [base.id]: 48119143n,
 };
 
 // Per-chain addresses. USDC is the canonical Circle address on each network; the MaskedUSD contracts
@@ -80,13 +80,15 @@ export const ADDRESSES: Record<number, Addresses> = {
   },
   [base.id]: {
     usdc: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // Base mainnet USDC (native)
-    usdm: ZERO,
-    vault: ZERO,
-    mintRamp: ZERO,
-    redeemRamp: ZERO,
-    pool: ZERO,
-    noteMemo: ZERO,
-    guardian: ZERO,
+    // Deployed 2026-06-29 (block 48119143, deployer nonce parity with Sepolia → same addresses).
+    // Guardian = deployer EOA. All contracts verified on Basescan.
+    usdm: "0x09a4184daEdaCdcCcded6087f576E57a05950fef",
+    vault: "0x7dD602d140C7f12591a9CcBF0d5300F566e36464",
+    mintRamp: "0x16154843AB66ca01CD14d6f36566479FAA2A3Df3",
+    redeemRamp: "0x6D6E4c124bCb94EA8364FAC4691A779e68d23CDb",
+    pool: "0x0e694f3243a89a91597A35B188F91750b1F1CDe6",
+    noteMemo: "0xF276B64C7e4456fF072D787694c7615A0F62C941",
+    guardian: "0xd656427d14052adA99B238Fe868A76a15ebC99bE",
   },
 };
 

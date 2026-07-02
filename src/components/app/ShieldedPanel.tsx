@@ -256,7 +256,7 @@ export default function ShieldedPanel() {
       if (n.leafIndex !== leafIndex) await updateNote(chainId, address, custodyKey, n.commitment, { leafIndex });
 
       const { root } = ix.witness(leafIndex);
-      // D4 association set (testnet: empty exclusion ledger + no maturation → root == commitment root).
+      // D4 association set (no exclusion feed published yet: empty ledger + no maturation → root == commitment root).
       const association = buildAssociation(ix);
       const associationRoot = association.root;
       const accepted = (await publicClient.readContract({
@@ -536,7 +536,7 @@ export default function ShieldedPanel() {
       <div className="mb-4 flex items-center justify-between">
         <h3 className="font-display text-lg font-semibold text-ink">Shielded balance</h3>
         <span className="rounded-full bg-accent-soft px-3 py-1 text-[0.72rem] font-medium text-accent-deep">
-          {live ? "Live · testnet" : "Coming next"}
+          {live ? "Live" : "Coming next"}
         </span>
       </div>
 
@@ -550,8 +550,7 @@ export default function ShieldedPanel() {
 
       {!live ? (
         <p className="text-[0.82rem] leading-relaxed text-ink-muted">
-          Shielding unlocks once the pool is live on this network. Switch to Base Sepolia to try it on
-          testnet.
+          Shielding unlocks once the pool is live on this network. Switch to Base to use it.
         </p>
       ) : locked ? (
         <div className="rounded-2xl border border-ink/10 bg-bg px-5 py-6 text-center">
@@ -829,8 +828,8 @@ export default function ShieldedPanel() {
             <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
             <span>
               Your note secret is your money — it&apos;s encrypted in this browser under your wallet
-              signature. Back it up. Unaudited testnet preview; not for real funds, not a tool for
-              evading the law.
+              signature. Back it up — losing it means losing access to the note. Privacy for normal
+              people; not a tool for evading the law.
             </span>
           </div>
         </>

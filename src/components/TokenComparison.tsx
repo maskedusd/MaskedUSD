@@ -7,16 +7,35 @@ import {
   type SetStateAction,
 } from "react";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
+import { Check, Copy } from "lucide-react";
 import MaskIcon from "./MaskIcon";
 
 type TokenId = "usdm" | "musd";
 
-/* ── Contract address placeholder ──────────────────────────────────────────
- * Real Base contract addresses get dropped in here once each token is live;
- * for now a clearly-pending "TBA" slot (dashed = placeholder). When the
- * address exists, swap "TBA" for it, make the border solid, and add a
- * copy-to-clipboard button. */
-function ContractField({ align = "left" }: { align?: "left" | "right" }) {
+/* ── Contract address field ────────────────────────────────────────────────
+ * With an `address`: the live Base contract, truncated, solid border, click to
+ * copy the full address ($USDM is live on Base mainnet). Without one: a
+ * clearly-pending "TBA" slot (dashed = placeholder) — $MUSD until it deploys. */
+function ContractField({
+  align = "left",
+  address,
+}: {
+  align?: "left" | "right";
+  address?: `0x${string}`;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    if (!address) return;
+    try {
+      await navigator.clipboard.writeText(address);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard blocked — no-op */
+    }
+  }
+
   return (
     <div
       className={`flex flex-col gap-1.5 ${
@@ -26,10 +45,27 @@ function ContractField({ align = "left" }: { align?: "left" | "right" }) {
       <span className="font-mono text-[0.56rem] uppercase tracking-[0.18em] text-ink-dim">
         Contract · Base
       </span>
-      <span className="inline-flex items-center gap-2 rounded-lg border border-dashed border-ink/20 bg-surface/60 px-3 py-1.5 font-mono text-[0.72rem] tracking-wider text-ink-muted">
-        <span className="text-ink-dim/60">0x</span>
-        TBA
-      </span>
+      {address ? (
+        <button
+          type="button"
+          onClick={copy}
+          title={address}
+          aria-label={`Copy contract address ${address}`}
+          className="inline-flex items-center gap-2 rounded-lg border border-ink/15 bg-surface/60 px-3 py-1.5 font-mono text-[0.72rem] tracking-wider text-ink-muted transition-colors hover:border-accent/40 hover:text-ink"
+        >
+          {address.slice(0, 6)}…{address.slice(-4)}
+          {copied ? (
+            <Check size={12} className="text-accent-deep" />
+          ) : (
+            <Copy size={12} className="opacity-60" />
+          )}
+        </button>
+      ) : (
+        <span className="inline-flex items-center gap-2 rounded-lg border border-dashed border-ink/20 bg-surface/60 px-3 py-1.5 font-mono text-[0.72rem] tracking-wider text-ink-muted">
+          <span className="text-ink-dim/60">0x</span>
+          TBA
+        </span>
+      )}
     </div>
   );
 }
@@ -47,9 +83,9 @@ function ContractField({ align = "left" }: { align?: "left" | "right" }) {
  * $USDM is the backed product; $MUSD is a separate, volatile, UNBACKED
  * ecosystem/utility token (not a second stablecoin, can go to zero).
  *
- * Honesty: $USDM mechanism is present-tense. $MUSD is pre-launch ("Launching on
- * Clanker, ~1 day after $USDM"), utility labelled PLANNED, with a persistent
- * "volatile · not backed" disclaimer; NO yield/APY, no live/deployed/audited claims.
+ * Honesty: $USDM is live on Base (real contract address, copyable). $MUSD is
+ * pre-launch ("Launching on Clanker"), utility labelled PLANNED, with a persistent
+ * "volatile · not backed" disclaimer; NO yield/APY, no audited claims.
  */
 
 const EASE_OUT: [number, number, number, number] = [0.16, 0.84, 0.3, 1];
@@ -101,7 +137,7 @@ function UsdmPanel() {
       </ul>
 
       <div className="mt-auto flex flex-col gap-4 pt-7">
-        <ContractField align="left" />
+        <ContractField align="left" address="0x09a4184daEdaCdcCcded6087f576E57a05950fef" />
         <span className="inline-flex w-fit items-center gap-2 rounded-full border border-ink/10 bg-surface/70 px-3 py-1.5 font-mono text-[0.6rem] uppercase tracking-[0.14em] text-ink-dim">
           Backed &middot; Shielded &middot; Redeemable
         </span>
@@ -133,9 +169,9 @@ function MusdPanel() {
         The ecosystem and access layer for the protocol.
       </p>
       <p className="mt-2 max-w-[22rem] text-sm leading-relaxed text-ink-muted">
-        Launching on Clanker, ~1 day after $USDM. A volatile, unbacked ecosystem
-        token — not a second stablecoin. It plugs you into the protocol&apos;s
-        utility and community.
+        Launching on Clanker. A volatile, unbacked ecosystem token — not a
+        second stablecoin. It plugs you into the protocol&apos;s utility and
+        community.
       </p>
 
       <ul className="mt-6 space-y-2.5">

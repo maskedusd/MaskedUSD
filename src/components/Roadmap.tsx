@@ -12,11 +12,11 @@ import {
 /**
  * "Roadmap" — a vertical timeline on a lavender band. A gradient rail runs down
  * the left; an accent progress line draws itself as you scroll (scroll-linked),
- * and each phase card slides in on view. The current phase pulses; everything
- * else is clearly "Planned".
+ * and each phase card slides in on view. The current phase pulses; shipped
+ * phases carry a solid accent dot ("Shipped"); the rest are "Planned".
  *
- * Honesty: pre-launch. No firm dates, no live/audited claims — phases are
- * directional ("Planned"), and only foundations are marked in progress.
+ * Honesty: mainnet-live. No firm dates, no audited claims — phases 01–03 are
+ * Shipped (factual), $MUSD (04) is the one in progress.
  */
 
 const EASE_OUT: [number, number, number, number] = [0.16, 0.84, 0.3, 1];
@@ -25,7 +25,7 @@ type Phase = {
   no: string;
   title: string;
   body: string;
-  status: "now" | "planned";
+  status: "done" | "now" | "planned";
 };
 
 const PHASES: Phase[] = [
@@ -33,25 +33,25 @@ const PHASES: Phase[] = [
     no: "01",
     title: "Foundations",
     body: "Protocol architecture, dZK circuit design, and the brand & community taking shape.",
-    status: "now",
+    status: "done",
   },
   {
     no: "02",
-    title: "Testnet & review",
-    body: "A public testnet for mint, shield, and redeem — alongside independent security review.",
-    status: "planned",
+    title: "Public testnet",
+    body: "The full flow — mint, shield, private transfers, and redeem — live end to end on Base Sepolia.",
+    status: "done",
   },
   {
     no: "03",
     title: "Mainnet on Base",
-    body: "$USDM goes live: hold, shield, and redeem private dollars backed 1:1 by native USDC.",
-    status: "planned",
+    body: "$USDM is live: hold, shield, and redeem private dollars backed 1:1 by native USDC.",
+    status: "done",
   },
   {
     no: "04",
     title: "$MUSD & ecosystem",
     body: "$MUSD launches on Clanker as the access layer, with integrations and utility expanding.",
-    status: "planned",
+    status: "now",
   },
 ];
 
@@ -141,7 +141,7 @@ export default function Roadmap() {
                 <span
                   aria-hidden="true"
                   className={`absolute top-1.5 flex h-[30px] w-[30px] -translate-x-[calc(100%+18px)] items-center justify-center rounded-full border sm:-translate-x-[calc(100%+22px)] ${
-                    phase.status === "now"
+                    phase.status !== "planned"
                       ? "border-accent/40 bg-accent-soft"
                       : "border-ink/12 bg-surface"
                   }`}
@@ -151,7 +151,9 @@ export default function Roadmap() {
                     className={
                       phase.status === "now"
                         ? "status-dot"
-                        : "h-1.5 w-1.5 rounded-full bg-ink-dim"
+                        : phase.status === "done"
+                          ? "h-1.5 w-1.5 rounded-full bg-accent-deep"
+                          : "h-1.5 w-1.5 rounded-full bg-ink-dim"
                     }
                   />
                 </span>
@@ -167,12 +169,12 @@ export default function Roadmap() {
                     </span>
                     <span
                       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[0.58rem] uppercase tracking-[0.14em] ${
-                        phase.status === "now"
+                        phase.status !== "planned"
                           ? "border border-accent/25 bg-accent-soft text-accent-deep"
                           : "border border-ink/10 bg-bg-wash/60 text-ink-dim"
                       }`}
                     >
-                      {phase.status === "now" ? "In progress" : "Planned"}
+                      {phase.status === "done" ? "Shipped" : phase.status === "now" ? "In progress" : "Planned"}
                     </span>
                   </div>
                   <h3 className="mt-3 font-display text-xl font-bold tracking-tight text-ink sm:text-2xl">

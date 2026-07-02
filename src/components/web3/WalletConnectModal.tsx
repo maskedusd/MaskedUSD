@@ -55,8 +55,8 @@ export default function WalletConnectModal() {
       )}
 
       <p className="mt-4 text-center text-[0.7rem] leading-relaxed text-ink-dim">
-        Base Sepolia testnet · unaudited preview. Don&apos;t have a wallet? Install MetaMask, Coinbase
-        Wallet, or Phantom.
+        MaskedUSD runs on Base. Don&apos;t have a wallet? Install MetaMask, Coinbase Wallet, or
+        Phantom.
       </p>
     </div>
   );

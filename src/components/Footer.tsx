@@ -14,9 +14,9 @@ import { XIcon, TelegramIcon, GitHubIcon } from "./BrandIcons";
  * "On Base" column. Everything reveals + staggers in on scroll; links and
  * socials animate on hover.
  *
- * Honesty: pre-launch. No fake newsletter/contact details; socials are the real
- * X / Telegram; facts are present-tense design, audits are "planned", and the
- * bottom bar carries the pre-launch / not-financial-advice disclaimer.
+ * Honesty: live on Base. No fake newsletter/contact details; socials are the real
+ * X / Telegram; facts are present-tense, audits stay "planned" until published,
+ * and the bottom bar carries the live / not-financial-advice disclaimer.
  */
 
 const X_URL = "https://x.com/MaskedUSD";
@@ -95,8 +95,8 @@ export default function Footer() {
               Hold dollars. <span className="text-accent-deep">Keep them private.</span>
             </h2>
             <p className="mt-3 text-base leading-relaxed text-ink-muted">
-              We&apos;re building toward launch in the open. Join the community
-              and follow along.
+              $USDM is live on Base. Join the community and follow along as the
+              ecosystem grows.
             </p>
           </div>
           <div className="flex shrink-0 flex-col gap-3 sm:flex-row">
@@ -267,7 +267,7 @@ export default function Footer() {
           className="mt-14 flex flex-col gap-3 border-t border-ink/10 pt-6 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-ink-dim sm:flex-row sm:items-center sm:justify-between"
         >
           <span>&copy; 2026 MaskedUSD &middot; Building on Base</span>
-          <span>Pre-launch &middot; Not financial advice</span>
+          <span>Live on Base &middot; Not financial advice</span>
         </motion.div>
       </motion.div>
     </footer>

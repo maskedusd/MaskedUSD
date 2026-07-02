@@ -8,10 +8,10 @@ import { Plus } from "lucide-react";
  * "FAQ" — an animated single-open accordion on a white band. Each row expands
  * with a smooth height/opacity transition; the toggle icon rotates from + to ×.
  * This is also the page's regulatory-framing surface (mixer question, backing,
- * pre-launch status, audits).
+ * live status, audits).
  *
- * Honesty: pre-launch answers — no live/audited claims; the "mixer" answer
- * frames privacy for normal users; audits are explicitly "planned".
+ * Honesty: live-on-Base answers — factual claims only; the "mixer" answer
+ * frames privacy for normal users; audits stay "planned" until published.
  */
 
 const EASE_OUT: [number, number, number, number] = [0.16, 0.84, 0.3, 1];
@@ -25,7 +25,7 @@ const FAQS = [
   },
   {
     q: "Is $USDM live yet?",
-    a: "Not yet — we're pre-launch and building on Base. Follow @MaskedUSD on X or join the Telegram for launch updates.",
+    a: "Yes — $USDM is live on Base mainnet. Launch the app to mint 1:1 against USDC, shield into a private balance, and redeem any time. Contracts are immutable and verified on Basescan.",
   },
   {
     q: "How is $USDM backed?",
@@ -49,7 +49,7 @@ const FAQS = [
   },
   {
     q: "Is it audited?",
-    a: "Independent security review and audits are planned before mainnet. We won't claim an audit we don't have — results will be published when they're complete.",
+    a: "Independent security review and audits are in the works, and results will be published when they're complete. We won't claim an audit we don't have. The contracts are immutable and verified on Basescan, so anyone can review exactly what's running.",
   },
 ];
 
