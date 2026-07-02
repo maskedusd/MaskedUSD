@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { useAccount, useSwitchChain } from "wagmi";
 import { base, baseSepolia } from "wagmi/chains";
 import { addressesFor, rampsLive } from "@/lib/contracts";
@@ -12,17 +12,33 @@ export default function NetworkNotice() {
   // configured (Ethereum mainnet, etc.). useChainId() would silently report the config default
   // (Base) in that case, which is exactly how a wrong-network tx once slipped through unnoticed.
   const { isConnected, chainId } = useAccount();
-  const { switchChain } = useSwitchChain();
+  const { switchChain, isPending: switching } = useSwitchChain();
+
+  const supported = chainId === base.id || chainId === baseSepolia.id;
+
+  // Auto-prompt the wallet to switch to Base as soon as it connects on an unsupported network —
+  // the user just approves the wallet's own dialog instead of having to find the banner. Tracked
+  // per chain id so someone who REJECTS the prompt isn't spammed on every render; for them the
+  // banner below stays as the manual path.
+  const promptedFor = useRef<number | null>(null);
+  useEffect(() => {
+    if (!isConnected) {
+      promptedFor.current = null;
+      return;
+    }
+    if (chainId === undefined || supported || promptedFor.current === chainId) return;
+    promptedFor.current = chainId;
+    switchChain({ chainId: base.id });
+  }, [isConnected, chainId, supported, switchChain]);
 
   if (!isConnected) {
     return <Banner tone="info">Connect your wallet to mint, redeem, and shield USDM.</Banner>;
   }
 
-  const supported = chainId === base.id || chainId === baseSepolia.id;
   if (!supported) {
     return (
       <Banner tone="warn">
-        <span>Unsupported network.</span>
+        <span>{switching ? "Approve the switch to Base in your wallet…" : "Unsupported network."}</span>
         <button
           type="button"
           onClick={() => switchChain({ chainId: base.id })}
