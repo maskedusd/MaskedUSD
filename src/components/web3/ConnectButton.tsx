@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useAccount, useChainId, useDisconnect, useSwitchChain } from "wagmi";
-import { base } from "wagmi/chains";
+import { base, baseSepolia } from "wagmi/chains";
 import { useRouter } from "next/navigation";
 import { Check, ChevronDown, Copy, ExternalLink, LogOut } from "lucide-react";
 import { truncateAddress } from "@/lib/format";
@@ -12,7 +12,9 @@ import { explorerAddressUrl } from "@/lib/explorer";
 /// Connected → a wallet button that opens a dropdown: full address (copyable), View on BaseScan, and a
 /// red Disconnect that fully disconnects, flashes a toast, and returns to the landing page.
 export default function ConnectButton() {
-  const { address, isConnected, chain } = useAccount();
+  // walletChainId = the chain the wallet is ACTUALLY on (even unconfigured ones like Ethereum
+  // mainnet, where useAccount().chain is undefined and useChainId() misleadingly says Base).
+  const { address, isConnected, chain, chainId: walletChainId } = useAccount();
   const { disconnect } = useDisconnect();
   const chainId = useChainId();
   const { switchChain } = useSwitchChain();
@@ -31,8 +33,10 @@ export default function ConnectButton() {
 
   if (!isConnected || !address) return null;
 
-  // mainnet-live: anything other than Base is "wrong network"
-  const wrongNetwork = chain != null && chainId !== base.id;
+  // Wrong network = the wallet sits on a chain we don't support at all. (Base Sepolia stays
+  // allowed as the testnet.) NOTE: must NOT be gated on `chain != null` — `chain` is undefined
+  // precisely when the wallet is on an unconfigured network, which is the case to catch.
+  const wrongNetwork = walletChainId !== base.id && walletChainId !== baseSepolia.id;
 
   async function copyAddress() {
     try {

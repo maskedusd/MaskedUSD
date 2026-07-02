@@ -114,14 +114,16 @@ export default function MintRedeemCard() {
       description: "Confirm in your wallet",
     });
 
+    // chainId pins the tx to the chain the addresses were loaded for — if the wallet sits on
+    // another network (e.g. Ethereum mainnet), wagmi prompts a switch instead of sending there.
     if (mode === "mint") {
       if (needsApproval) {
-        writeContract({ address: addrs!.usdc, abi: ERC20_ABI, functionName: "approve", args: [addrs!.vault, amountUnits] });
+        writeContract({ chainId, address: addrs!.usdc, abi: ERC20_ABI, functionName: "approve", args: [addrs!.vault, amountUnits] });
       } else {
-        writeContract({ address: addrs!.mintRamp, abi: MINT_RAMP_ABI, functionName: "mint", args: [amountUnits] });
+        writeContract({ chainId, address: addrs!.mintRamp, abi: MINT_RAMP_ABI, functionName: "mint", args: [amountUnits] });
       }
     } else {
-      writeContract({ address: addrs!.redeemRamp, abi: REDEEM_RAMP_ABI, functionName: "redeem", args: [amountUnits, address] });
+      writeContract({ chainId, address: addrs!.redeemRamp, abi: REDEEM_RAMP_ABI, functionName: "redeem", args: [amountUnits, address] });
     }
   }
 

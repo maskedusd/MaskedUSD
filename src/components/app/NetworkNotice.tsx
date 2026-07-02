@@ -1,15 +1,17 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useAccount, useChainId, useSwitchChain } from "wagmi";
+import { useAccount, useSwitchChain } from "wagmi";
 import { base, baseSepolia } from "wagmi/chains";
 import { addressesFor, rampsLive } from "@/lib/contracts";
 
 /// A single contextual banner above the dApp cards: connect prompt, unsupported-network warning, or a
 /// pre-deploy preview notice. Returns null when everything is ready.
 export default function NetworkNotice() {
-  const { isConnected } = useAccount();
-  const chainId = useChainId();
+  // useAccount().chainId is the chain the WALLET is actually on — including chains we never
+  // configured (Ethereum mainnet, etc.). useChainId() would silently report the config default
+  // (Base) in that case, which is exactly how a wrong-network tx once slipped through unnoticed.
+  const { isConnected, chainId } = useAccount();
   const { switchChain } = useSwitchChain();
 
   if (!isConnected) {
@@ -32,7 +34,7 @@ export default function NetworkNotice() {
     );
   }
 
-  if (!rampsLive(addressesFor(chainId))) {
+  if (!rampsLive(addressesFor(chainId!))) {
     return (
       <Banner tone="info">
         MaskedUSD is not deployed on this network yet — this is a preview. Mint and redeem activate the

@@ -175,6 +175,7 @@ export default function ShieldedPanel() {
         setPhase("approving");
         toast.update(tid, { title: "Approving USDM", description: "Confirm in your wallet" });
         const aHash = await writeContractAsync({
+          chainId,
           address: addrs!.usdm,
           abi: ERC20_ABI,
           functionName: "approve",
@@ -186,6 +187,7 @@ export default function ShieldedPanel() {
       setPhase("shielding");
       toast.update(tid, { title: "Shielding USDM", description: "Confirm in your wallet" });
       const sHash = await writeContractAsync({
+        chainId,
         address: addrs!.pool,
         abi: SHIELDED_POOL_ABI,
         functionName: "shield",
@@ -285,6 +287,7 @@ export default function ShieldedPanel() {
 
       toast.update(tid, { title: "Withdrawing", description: "Confirm in your wallet" });
       const hash = await writeContractAsync({
+        chainId,
         address: addrs!.pool,
         abi: SHIELDED_POOL_ABI,
         functionName: "unshield",
@@ -354,6 +357,7 @@ export default function ShieldedPanel() {
 
       toast.update(tid, { title: "Sending privately", description: "Confirm in your wallet" });
       const hash = await writeContractAsync({
+        chainId,
         address: addrs!.pool,
         abi: SHIELDED_POOL_ABI,
         functionName: "transfer",
@@ -395,6 +399,7 @@ export default function ShieldedPanel() {
       setPending(loadPendingMemos(chainId, address));
       try {
         const mHash = await writeContractAsync({
+          chainId,
           address: addrs!.noteMemo,
           abi: NOTE_MEMO_ABI,
           functionName: "post",
@@ -466,6 +471,7 @@ export default function ShieldedPanel() {
     const tid = toast.show({ status: "pending", title: "Resending payment notice", description: "Confirm in your wallet" });
     try {
       const hash = await writeContractAsync({
+        chainId,
         address: addrs!.noteMemo,
         abi: NOTE_MEMO_ABI,
         functionName: "post",
@@ -492,6 +498,7 @@ export default function ShieldedPanel() {
         functionName: "currentRoot",
       })) as bigint;
       const hash = await writeContractAsync({
+        chainId,
         address: addrs!.pool,
         abi: SHIELDED_POOL_ABI,
         functionName: "acceptAssociationRoot",
