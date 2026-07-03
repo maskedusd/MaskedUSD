@@ -553,37 +553,102 @@ export default function ShieldedPanel() {
     }
   }
 
-  async function doScan() {
-    if (!canTransfer || !address || !publicClient || !custodyKey || !identity) return;
-    setScanning(true);
-    const tid = toast.show({ status: "pending", title: "Checking for received payments", description: "Scanning the pool + memos…" });
-    try {
-      const poolLogs = await fetchPoolLogs(publicClient, addrs!.pool, POOL_DEPLOY_BLOCK[chainId] ?? 0n);
-      const ix = buildIndexer(poolLogs);
-      const memoLogs = await fetchPoolLogs(publicClient, addrs!.noteMemo, POOL_DEPLOY_BLOCK[chainId] ?? 0n);
-      const found = discoverReceivedNotes(decodeMemoLogs(memoLogs), ix, identity.encPriv, identity.spendPriv);
+  // Discover privately-received notes. Runs automatically (on unlock + a visibility-gated poll) and
+  // manually (the "Check received" button). INCREMENTAL: it caches the pool logs + a block cursor and
+  // fetches only NEW blocks per run, so a background poll costs ~one small getLogs, not a full rescan
+  // (that's what makes polling safe against RPC rate limits). New memos are matched against the full
+  // (cached) tree — a memo is always posted after the commitment it references, so scanning only the
+  // delta is correct. Silent runs show a toast ONLY when something new arrives.
+  const scanCacheRef = useRef<{ nextFrom: bigint; poolLogs: Awaited<ReturnType<typeof fetchPoolLogs>> } | null>(null);
+  const scanBusyRef = useRef(false);
+  useEffect(() => {
+    scanCacheRef.current = null; // pool logs are chain-specific — drop the cache on chain switch
+  }, [chainId]);
 
-      const existing = new Set((await loadNotes(chainId, address, custodyKey)).map((n) => n.commitment.toLowerCase()));
-      let added = 0;
-      for (const d of found) {
-        const stored = discoveredToStored(d);
-        if (existing.has(stored.commitment.toLowerCase())) continue;
-        await addNote(chainId, address, custodyKey, stored);
-        added++;
+  const scanReceived = useCallback(
+    async (opts: { silent: boolean; reset?: boolean }): Promise<number> => {
+      if (scanBusyRef.current) return 0;
+      if (!poolLive(addrs) || !addrs?.noteMemo || !address || !publicClient || !custodyKey || !identity) return 0;
+      scanBusyRef.current = true;
+      if (!opts.silent) setScanning(true);
+      const tid = opts.silent
+        ? null
+        : toast.show({ status: "pending", title: "Checking for received payments", description: "Scanning the pool + memos…" });
+      try {
+        if (opts.reset) scanCacheRef.current = null;
+        const from = scanCacheRef.current ? scanCacheRef.current.nextFrom : POOL_DEPLOY_BLOCK[chainId] ?? 0n;
+        const head = await publicClient.getBlockNumber();
+        let added = 0;
+        if (head >= from) {
+          const newPool = await fetchPoolLogs(publicClient, addrs.pool, from, head);
+          const newMemo = await fetchPoolLogs(publicClient, addrs.noteMemo, from, head);
+          const allPool = [...(scanCacheRef.current?.poolLogs ?? []), ...newPool];
+          const ix = buildIndexer(allPool);
+          const found = discoverReceivedNotes(decodeMemoLogs(newMemo), ix, identity.encPriv, identity.spendPriv);
+          const existing = new Set(
+            (await loadNotes(chainId, address, custodyKey)).map((n) => n.commitment.toLowerCase()),
+          );
+          for (const d of found) {
+            const stored = discoveredToStored(d);
+            if (existing.has(stored.commitment.toLowerCase())) continue;
+            await addNote(chainId, address, custodyKey, stored);
+            added++;
+          }
+          scanCacheRef.current = { nextFrom: head + 1n, poolLogs: allPool };
+          if (added > 0) await refreshNotes();
+        }
+        if (tid) {
+          toast.update(tid, {
+            status: "success",
+            title: added ? `Found ${added} received note${added > 1 ? "s" : ""}` : "No new payments",
+            description: added ? "Added to your shielded balance." : "You're all caught up.",
+          });
+        } else if (added > 0) {
+          toast.show({
+            status: "success",
+            title: `Received ${added} private payment${added > 1 ? "s" : ""}`,
+            description: "Added to your shielded balance.",
+          });
+        }
+        return added;
+      } catch (e) {
+        if (tid) {
+          const msg = (e as { shortMessage?: string })?.shortMessage ?? "Scan failed";
+          toast.update(tid, { status: "error", title: "Scan failed", description: msg });
+        }
+        return 0;
+      } finally {
+        scanBusyRef.current = false;
+        if (!opts.silent) setScanning(false);
       }
-      await refreshNotes();
-      toast.update(tid, {
-        status: "success",
-        title: added ? `Found ${added} received note${added > 1 ? "s" : ""}` : "No new payments",
-        description: added ? "Added to your shielded balance." : "You're all caught up.",
-      });
-    } catch (e) {
-      const msg = (e as { shortMessage?: string })?.shortMessage ?? "Scan failed";
-      toast.update(tid, { status: "error", title: "Scan failed", description: msg });
-    } finally {
-      setScanning(false);
-    }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [addrs, address, publicClient, custodyKey, identity, chainId, refreshNotes],
+  );
+
+  function doScan() {
+    void scanReceived({ silent: false, reset: true });
   }
+
+  // Auto-discover: scan immediately once unlocked, then poll every 15s while the tab is visible, and
+  // the instant it regains focus. Background polls are silent + incremental, so this stays cheap.
+  useEffect(() => {
+    if (!identity || !poolLive(addrs) || !address) return;
+    void scanReceived({ silent: true });
+    const interval = setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
+      void scanReceived({ silent: true });
+    }, 15_000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void scanReceived({ silent: true });
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [identity, address, chainId, scanReceived]);
 
   async function resendMemo(m: PendingMemo) {
     if (!canTransfer || !address || !publicClient) return;

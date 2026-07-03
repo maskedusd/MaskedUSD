@@ -42,14 +42,16 @@ interface LogReader {
   }) => Promise<PoolLog[]>;
 }
 
-/// Fetch all pool logs from `fromBlock` to head, chunked under the RPC's range cap and
-/// globally ordered — safe to feed straight into buildIndexer.
+/// Fetch pool logs from `fromBlock` to `toBlock` (defaults to head), chunked under the RPC's range
+/// cap and globally ordered — safe to feed straight into buildIndexer. Pass an explicit `toBlock`
+/// for incremental scans so the caller controls the cursor (fetch only the delta each poll).
 export async function fetchPoolLogs(
   client: LogReader,
   pool: `0x${string}`,
   fromBlock: bigint,
+  toBlock?: bigint,
 ): Promise<RawLog[]> {
-  const head = await client.getBlockNumber();
+  const head = toBlock ?? (await client.getBlockNumber());
   const out: PoolLog[] = [];
   for (let start = fromBlock; start <= head; start += LOG_RANGE + 1n) {
     const end = start + LOG_RANGE < head ? start + LOG_RANGE : head;
