@@ -1,6 +1,7 @@
-import { http, createConfig } from "wagmi";
+import { createConfig } from "wagmi";
 import { base, baseSepolia } from "wagmi/chains";
 import { injected, coinbaseWallet } from "wagmi/connectors";
+import { transports } from "./rpc";
 
 // MaskedUSD is live on Base mainnet (contracts deployed 2026-06-29); Base Sepolia stays wired as
 // the testnet. Base first in the list = the default chain the dApp prompts for.
@@ -15,10 +16,7 @@ export const config = createConfig({
     coinbaseWallet({ appName: "MaskedUSD", preference: "all" }),
     injected({ target: "phantom" }),
   ],
-  transports: {
-    [baseSepolia.id]: http(),
-    [base.id]: http(),
-  },
+  transports,
   ssr: true,
 });
 

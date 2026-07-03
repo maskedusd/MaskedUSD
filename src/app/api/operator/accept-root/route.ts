@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { createPublicClient, createWalletClient, http } from "viem";
+import { createPublicClient, createWalletClient } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { base } from "viem/chains";
 import { ADDRESSES, SHIELDED_POOL_ABI } from "@/lib/contracts";
+import { baseTransport } from "@/lib/rpc";
 
 /**
  * Guardian auto-accept: if the pool's current root isn't yet an accepted association root, accept
@@ -39,8 +40,7 @@ async function acceptCurrentRoot(): Promise<NextResponse> {
     );
   }
 
-  const rpc = http(process.env.BASE_RPC_URL ?? "https://mainnet.base.org");
-  const publicClient = createPublicClient({ chain: base, transport: rpc });
+  const publicClient = createPublicClient({ chain: base, transport: baseTransport });
 
   const root = (await publicClient.readContract({
     address: POOL,
@@ -61,7 +61,7 @@ async function acceptCurrentRoot(): Promise<NextResponse> {
   }
 
   const account = privateKeyToAccount(key as `0x${string}`);
-  const wallet = createWalletClient({ account, chain: base, transport: rpc });
+  const wallet = createWalletClient({ account, chain: base, transport: baseTransport });
   try {
     const hash = await wallet.writeContract({
       address: POOL,
