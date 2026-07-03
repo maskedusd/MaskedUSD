@@ -1,33 +1,30 @@
-import { fallback, http, type Transport } from "viem";
+import { createPublicClient, fallback, http, type Transport } from "viem";
 import { base, baseSepolia } from "wagmi/chains";
 
 /**
- * Resilient RPC transports. The app's log-scans (history, note discovery, reconcile) make many
- * eth_getLogs / eth_getBlock calls; a single public endpoint rate-limits (HTTP 429) under that load.
- * Fix, in layers:
- *   1. fallback([...])  — try endpoints in order; on any error (429/5xx/timeout) fail over to the next.
- *   2. { batch: true }  — coalesce concurrent JSON-RPC calls into one HTTP POST, cutting request COUNT
- *                         (the thing that trips rate limits) by an order of magnitude.
- *   3. NEXT_PUBLIC_BASE_RPC — optional premium endpoint (Alchemy/QuickNode/…) tried FIRST when set,
- *                         so adding one env var upgrades reliability everywhere with no code change.
- * Public endpoints are CORS-enabled and support eth_getLogs on Base.
+ * RPC transports, split by call type — because no single Base endpoint is good at everything:
+ *
+ *  • GENERAL calls (balances, receipts, reads, writes, the frequent 15s poll's block reads) →
+ *    `transports` below. Alchemy first when NEXT_PUBLIC_BASE_RPC is set (high limits kill the 429s
+ *    those bursty calls caused), then public fallbacks. NOTE: Alchemy's free tier caps eth_getLogs
+ *    at a 10-block range, so log scans must NOT use this transport.
+ *
+ *  • LOG SCANS (eth_getLogs over ~2000-block chunks: history, note discovery, reconcile) →
+ *    `makeLogsClient()`. Only endpoints verified to serve a wide getLogs range (base.org, drpc).
+ *    Excludes Alchemy-free (10-block cap), 1rpc (50-block), publicnode (archive token), meowrpc.
+ *
+ * All transports batch concurrent JSON-RPC into single POSTs and fail over on error.
  */
 
-// Only endpoints VERIFIED to serve historical eth_getLogs over a ~2000-block range from the browser
-// (the app's heaviest call). Others were dropped after testing: 1rpc caps getLogs at 50 blocks,
-// publicnode requires a paid archive token, meowrpc doesn't support getLogs, llamarpc was down.
-// The durable fix is a premium endpoint in NEXT_PUBLIC_BASE_RPC (Alchemy/QuickNode) — tried first.
-const BASE_RPCS = [
-  process.env.NEXT_PUBLIC_BASE_RPC, // optional premium, first if present
-  "https://mainnet.base.org",
-  "https://base.drpc.org",
-].filter((u): u is string => typeof u === "string" && u.length > 0);
+const nonEmpty = (u: string | undefined): u is string => typeof u === "string" && u.length > 0;
 
-const BASE_SEPOLIA_RPCS = [
-  process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC,
-  "https://sepolia.base.org",
-  "https://base-sepolia-rpc.publicnode.com",
-].filter((u): u is string => typeof u === "string" && u.length > 0);
+// General: premium (Alchemy) first when configured, then range-capable publics as fallback.
+const BASE_RPCS = [process.env.NEXT_PUBLIC_BASE_RPC, "https://mainnet.base.org", "https://base.drpc.org"].filter(nonEmpty);
+const BASE_SEPOLIA_RPCS = [process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC, "https://sepolia.base.org"].filter(nonEmpty);
+
+// Log scans: public endpoints that allow a ~2000-block eth_getLogs range (deliberately no Alchemy).
+const BASE_LOG_RPCS = ["https://mainnet.base.org", "https://base.drpc.org"];
+const BASE_SEPOLIA_LOG_RPCS = ["https://sepolia.base.org"];
 
 function resilient(urls: string[]): Transport {
   return fallback(
@@ -43,3 +40,15 @@ export const transports = {
   [base.id]: baseTransport,
   [baseSepolia.id]: baseSepoliaTransport,
 };
+
+const baseLogsTransport = resilient(BASE_LOG_RPCS);
+const baseSepoliaLogsTransport = resilient(BASE_SEPOLIA_LOG_RPCS);
+
+/// A viem client dedicated to log scans (getLogs / getBlock / getBlockNumber). Always uses
+/// range-capable public endpoints regardless of the premium RPC configured for general calls, so a
+/// 10-block-capped premium endpoint can never break a 2000-block chunk scan.
+export function makeLogsClient(chainId: number) {
+  return chainId === baseSepolia.id
+    ? createPublicClient({ chain: baseSepolia, transport: baseSepoliaLogsTransport })
+    : createPublicClient({ chain: base, transport: baseLogsTransport });
+}

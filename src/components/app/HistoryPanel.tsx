@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { addressesFor, rampsLive, POOL_DEPLOY_BLOCK } from "@/lib/contracts";
 import { loadHistory, type HistoryItem, type HistoryKind } from "@/lib/history";
+import { makeLogsClient } from "@/lib/rpc";
 import { displayUnits, truncateAddress } from "@/lib/format";
 import { explorerTxUrl } from "@/lib/explorer";
 import { useIdentity } from "@/components/web3/IdentityProvider";
@@ -115,7 +116,8 @@ export default function HistoryPanel() {
     setLoading(true);
     setError(null);
     try {
-      const list = await loadHistory(publicClient, address, addrs!, POOL_DEPLOY_BLOCK[chainId] ?? 0n);
+      // Log scans need a wide-getLogs-range endpoint (public), not the general premium transport.
+      const list = await loadHistory(makeLogsClient(chainId), address, addrs!, POOL_DEPLOY_BLOCK[chainId] ?? 0n);
       setItems(list);
     } catch {
       setError("Couldn't load on-chain history — the RPC may be busy. Try refresh.");

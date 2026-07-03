@@ -29,6 +29,7 @@ import {
 import { displayUnits, fromUnits, isValidAmount, toUnits } from "@/lib/format";
 import { createShieldNote, proveShield } from "@/lib/shielded/client";
 import { buildIndexer, fetchPoolLogs, proveUnshield, buildAssociation } from "@/lib/shielded/unshield";
+import { makeLogsClient } from "@/lib/rpc";
 import { selectTwoInputs, buildOutputs, proveTransfer } from "@/lib/shielded/transfer";
 import { decodeMemoLogs, discoverReceivedNotes } from "@/lib/shielded/discovery";
 import {
@@ -68,6 +69,9 @@ export default function ShieldedPanel() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const publicClient = usePublicClient();
+  // Log scans (getLogs over wide block ranges) go through range-capable public RPCs, not the general
+  // (possibly getLogs-range-capped premium) transport. Everything else uses the wagmi publicClient.
+  const logsClient = useMemo(() => makeLogsClient(chainId), [chainId]);
   const addrs = addressesFor(chainId);
   const live = poolLive(addrs);
   const canTransfer = transfersLive(addrs);
@@ -136,7 +140,7 @@ export default function ShieldedPanel() {
     if (pending.length === 0) return;
     reconcileRef.current = true;
     try {
-      const logs = await fetchPoolLogs(publicClient, addrs!.pool, POOL_DEPLOY_BLOCK[chainId] ?? 0n);
+      const logs = await fetchPoolLogs(logsClient, addrs!.pool, POOL_DEPLOY_BLOCK[chainId] ?? 0n);
       const ix = buildIndexer(logs);
       const leafByCommitment = new Map<string, number>();
       ix.leaves.forEach((c, i) => {
@@ -359,7 +363,7 @@ export default function ShieldedPanel() {
     });
     setWithdrawing(n.commitment);
     try {
-      const logs = await fetchPoolLogs(publicClient, addrs!.pool, POOL_DEPLOY_BLOCK[chainId] ?? 0n);
+      const logs = await fetchPoolLogs(logsClient, addrs!.pool, POOL_DEPLOY_BLOCK[chainId] ?? 0n);
       const ix = buildIndexer(logs);
 
       const note = storedToNote(n);
@@ -455,7 +459,7 @@ export default function ShieldedPanel() {
     });
     setTransferring(true);
     try {
-      const logs = await fetchPoolLogs(publicClient, addrs!.pool, POOL_DEPLOY_BLOCK[chainId] ?? 0n);
+      const logs = await fetchPoolLogs(logsClient, addrs!.pool, POOL_DEPLOY_BLOCK[chainId] ?? 0n);
       const ix = buildIndexer(logs);
 
       const myNotes = (await loadNotes(chainId, address, custodyKey))
@@ -580,11 +584,11 @@ export default function ShieldedPanel() {
       try {
         if (opts.reset) scanCacheRef.current = null;
         const from = scanCacheRef.current ? scanCacheRef.current.nextFrom : POOL_DEPLOY_BLOCK[chainId] ?? 0n;
-        const head = await publicClient.getBlockNumber();
+        const head = await logsClient.getBlockNumber();
         let added = 0;
         if (head >= from) {
-          const newPool = await fetchPoolLogs(publicClient, addrs.pool, from, head);
-          const newMemo = await fetchPoolLogs(publicClient, addrs.noteMemo, from, head);
+          const newPool = await fetchPoolLogs(logsClient, addrs.pool, from, head);
+          const newMemo = await fetchPoolLogs(logsClient, addrs.noteMemo, from, head);
           const allPool = [...(scanCacheRef.current?.poolLogs ?? []), ...newPool];
           const ix = buildIndexer(allPool);
           const found = discoverReceivedNotes(decodeMemoLogs(newMemo), ix, identity.encPriv, identity.spendPriv);
