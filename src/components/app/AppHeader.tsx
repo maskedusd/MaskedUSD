@@ -56,7 +56,7 @@ export default function AppHeader() {
           </span>
         </nav>
 
-        <div className="flex items-center gap-1.5">
+        <div className="relative flex items-center gap-1.5">
           <NotificationsBell />
           <ConnectButton />
         </div>

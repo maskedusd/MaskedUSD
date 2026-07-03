@@ -50,7 +50,10 @@ export default function NotificationsBell() {
   }
 
   return (
-    <div ref={ref} className="relative">
+    // Not a positioning context itself — the dropdown anchors to the header's right cluster (marked
+    // `relative` in AppHeader) so it opens flush with the right edge, under the wallet button, instead
+    // of spilling left from the bell. The ref still wraps button + panel for outside-click detection.
+    <div ref={ref} className="flex">
       <button
         type="button"
         onClick={toggle}
