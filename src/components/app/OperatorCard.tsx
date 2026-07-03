@@ -51,7 +51,7 @@ export default function OperatorCard() {
   }
 
   return (
-    <div className="w-full max-w-md rounded-3xl border border-ink/10 bg-surface p-6 shadow-xl shadow-accent/5">
+    <div className="w-full rounded-3xl border border-ink/10 bg-surface p-6 shadow-xl shadow-accent/5">
       <p className="font-mono text-[0.64rem] uppercase tracking-[0.16em] text-ink-dim">Operator</p>
       <p className="mt-2 text-[0.8rem] leading-relaxed text-ink-muted">
         Accept the current association root so shielded notes can be withdrawn.

@@ -4,7 +4,7 @@ import { AlertTriangle } from "lucide-react";
 /// note-secret backup warning — moved out of the shielded panel to balance the two columns.
 export default function AppNotices() {
   return (
-    <div className="w-full max-w-md rounded-3xl border border-ink/10 bg-surface p-6 shadow-xl shadow-accent/5">
+    <div className="w-full rounded-3xl border border-ink/10 bg-surface p-6 shadow-xl shadow-accent/5">
       <p className="font-mono text-[0.64rem] uppercase tracking-[0.16em] text-ink-dim">Good to know</p>
       <p className="mt-3 text-[0.78rem] leading-relaxed text-ink-muted">
         Withdrawals require the operator to accept the current pool root; a deposit after yours can

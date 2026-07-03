@@ -146,7 +146,7 @@ export default function MintRedeemCard() {
   const disabled = !isConnected || !live || !valid || insufficient || busy;
 
   return (
-    <div className="w-full max-w-md rounded-3xl border border-ink/10 bg-surface p-6 shadow-xl shadow-accent/5">
+    <div className="w-full rounded-3xl border border-ink/10 bg-surface p-6 shadow-xl shadow-accent/5">
       {/* tabs */}
       <div className="mb-5 grid grid-cols-2 gap-1 rounded-full bg-bg-wash p-1">
         {(["mint", "redeem"] as Mode[]).map((m) => (

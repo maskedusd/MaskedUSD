@@ -712,7 +712,7 @@ export default function ShieldedPanel() {
     transferAmountUnits <= shieldedTotal;
 
   return (
-    <div className="w-full max-w-md rounded-3xl border border-ink/10 bg-surface p-6 shadow-xl shadow-accent/5">
+    <div className="w-full rounded-3xl border border-ink/10 bg-surface p-6 shadow-xl shadow-accent/5">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="font-display text-lg font-semibold text-ink">Shielded balance</h3>
         <span className="rounded-full bg-accent-soft px-3 py-1 text-[0.72rem] font-medium text-accent-deep">
