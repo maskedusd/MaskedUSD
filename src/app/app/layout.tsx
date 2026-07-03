@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Web3Provider from "@/components/web3/Web3Provider";
 import { ToastProvider } from "@/components/web3/Toaster";
 import { IdentityProvider } from "@/components/web3/IdentityProvider";
+import { NotificationsProvider } from "@/components/web3/NotificationsProvider";
 
 export const metadata: Metadata = {
   // The root layout's template prefixes "MaskedUSD // " onto this segment's default; re-declaring
@@ -23,7 +24,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <Web3Provider>
       <ToastProvider>
-        <IdentityProvider>{children}</IdentityProvider>
+        <IdentityProvider>
+          <NotificationsProvider>{children}</NotificationsProvider>
+        </IdentityProvider>
       </ToastProvider>
     </Web3Provider>
   );

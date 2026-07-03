@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import MaskIcon from "@/components/MaskIcon";
 import ConnectButton from "@/components/web3/ConnectButton";
+import NotificationsBell from "@/components/app/NotificationsBell";
 
 /**
  * AppHeader — the shared dApp header: logo, center nav (Dashboard / History / $MASKED), wallet
@@ -55,7 +56,10 @@ export default function AppHeader() {
           </span>
         </nav>
 
-        <ConnectButton />
+        <div className="flex items-center gap-1.5">
+          <NotificationsBell />
+          <ConnectButton />
+        </div>
       </div>
     </header>
   );

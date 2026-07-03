@@ -51,6 +51,7 @@ import { encodeAddress, decodeAddress, isValidAddress } from "@/lib/shielded/add
 import { encryptNote } from "@/lib/shielded/noteCrypto";
 import type { Note } from "@/lib/shielded/notes";
 import { useIdentity } from "@/components/web3/IdentityProvider";
+import { useNotifications } from "@/components/web3/NotificationsProvider";
 import { useToast } from "@/components/web3/Toaster";
 import Skeleton from "@/components/ui/Skeleton";
 
@@ -96,6 +97,7 @@ export default function ShieldedPanel() {
 
   const { writeContractAsync } = useWriteContract();
   const toast = useToast();
+  const { notify } = useNotifications();
 
   const refreshNotes = useCallback(async () => {
     if (!address) {
@@ -599,6 +601,14 @@ export default function ShieldedPanel() {
             const stored = discoveredToStored(d);
             if (existing.has(stored.commitment.toLowerCase())) continue;
             await addNote(chainId, address, custodyKey, stored);
+            // Persist a bell notification (deduped by commitment) so the user knows even if they're
+            // not watching the notes list when the payment arrives.
+            notify({
+              id: `recv:${stored.commitment.toLowerCase()}`,
+              kind: "received",
+              title: `Received ${displayUnits(BigInt(stored.value))} USDM`,
+              body: "A private payment arrived in your shielded balance.",
+            });
             added++;
           }
           scanCacheRef.current = { nextFrom: head + 1n, poolLogs: allPool };
