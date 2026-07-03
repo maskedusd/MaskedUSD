@@ -33,12 +33,7 @@ const EXPLORE = [
   { label: "FAQ", id: "faq" },
 ];
 
-const FACTS = [
-  "1:1 native-USDC-backed",
-  "Shielded by dZK Proof",
-  "$MUSD launching on Clanker",
-  "Security review planned",
-];
+const USDM_BASESCAN = "https://basescan.org/token/0x09a4184daEdaCdcCcded6087f576E57a05950fef";
 
 function ColTitle({ children }: { children: React.ReactNode }) {
   return (
@@ -183,17 +178,6 @@ export default function Footer() {
                   </SmoothScrollLink>
                 </li>
               ))}
-              <li>
-                <a
-                  href="/whitepaper"
-                  className="group inline-flex items-center gap-1 text-sm text-ink-muted transition-colors hover:text-ink"
-                >
-                  Whitepaper
-                  <span className="-translate-x-1 text-accent opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100">
-                    →
-                  </span>
-                </a>
-              </li>
             </ul>
           </motion.div>
 
@@ -252,22 +236,46 @@ export default function Footer() {
             </ul>
           </motion.div>
 
-          {/* On Base (facts) */}
+          {/* Resources */}
           <motion.div variants={item}>
-            <ColTitle>On Base</ColTitle>
+            <ColTitle>Resources</ColTitle>
             <ul className="mt-5 space-y-3">
-              {FACTS.map((fact) => (
-                <li
-                  key={fact}
-                  className="flex items-start gap-2.5 text-sm text-ink-muted"
+              <li>
+                <a
+                  href="/whitepaper"
+                  className="group inline-flex items-center gap-1 text-sm text-ink-muted transition-colors hover:text-ink"
                 >
-                  <span
-                    aria-hidden="true"
-                    className="mt-[0.45rem] h-1.5 w-1.5 shrink-0 rounded-full bg-accent/70"
+                  Whitepaper
+                  <span className="-translate-x-1 text-accent opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100">
+                    →
+                  </span>
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/support"
+                  className="group inline-flex items-center gap-1 text-sm text-ink-muted transition-colors hover:text-ink"
+                >
+                  Support
+                  <span className="-translate-x-1 text-accent opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100">
+                    →
+                  </span>
+                </a>
+              </li>
+              <li>
+                <a
+                  href={USDM_BASESCAN}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group inline-flex items-center gap-1.5 text-sm text-ink-muted transition-colors hover:text-ink"
+                >
+                  $USDM on Basescan
+                  <ArrowUpRight
+                    size={13}
+                    className="-translate-x-1 translate-y-0.5 opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:translate-y-0 group-hover:opacity-100"
                   />
-                  <span>{fact}</span>
-                </li>
-              ))}
+                </a>
+              </li>
             </ul>
           </motion.div>
         </div>

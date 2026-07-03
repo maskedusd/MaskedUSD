@@ -7,21 +7,22 @@ import {
   ArrowRight,
   ArrowUpRight,
   BookOpen,
-  Compass,
+  FileText,
   HelpCircle,
   Megaphone,
   MessagesSquare,
+  Ticket,
 } from "lucide-react";
 import { XIcon, TelegramIcon } from "./BrandIcons";
+import SmoothScrollLink from "./SmoothScrollLink";
+import SupportTicket from "./SupportTicket";
 
 /**
- * SupportMain — the body of the /support page. Pre-launch, community-first
- * support: channel cards (Telegram / X / FAQ / How it works), a "coming soon"
- * docs card, and a compact common-questions list that links back to the home
- * FAQ. Lavender hero → white channels band (the footer closes in lavender).
- *
- * Honesty: no fake email/phone/ticket system. The fastest real channel is the
- * Telegram; docs are explicitly "coming soon".
+ * SupportMain — the body of the /support page: channel cards (Telegram / X /
+ * FAQ / How it works / Whitepaper), a compact common-questions list linking
+ * back to the home FAQ, and a real ticket form (#ticket) that lands in the
+ * team inbox via /api/support (Resend). Lavender hero → white channels band →
+ * lavender ticket band (the footer closes in lavender).
  */
 
 const X_URL = "https://x.com/MaskedUSD";
@@ -65,6 +66,12 @@ const CHANNELS: Channel[] = [
     title: "How it works",
     desc: "Deposit, shield, redeem — see the $USDM flow in three quick steps.",
     href: "/#how-it-works",
+  },
+  {
+    icon: FileText,
+    title: "Read the whitepaper",
+    desc: "The full protocol design — architecture, the shielded pool, compliance posture, and risks.",
+    href: "/whitepaper",
   },
 ];
 
@@ -224,6 +231,13 @@ export default function SupportMain() {
               <TelegramIcon size={16} />
               Ask in the Telegram
             </a>
+            <SmoothScrollLink
+              targetId="ticket"
+              className="glass inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium text-ink transition-colors hover:border-accent"
+            >
+              <Ticket size={15} className="text-accent-deep" />
+              Open a ticket
+            </SmoothScrollLink>
             <a
               href={X_URL}
               target="_blank"
@@ -254,8 +268,8 @@ export default function SupportMain() {
               Pick a channel.
             </h2>
             <p className="mt-4 max-w-xl text-base leading-relaxed text-ink-muted">
-              No ticket queues yet — we&apos;re a small team, so the Telegram
-              is the fastest way to reach a human.
+              The Telegram is the fastest way to reach a human — or open a
+              ticket below and it lands straight in the team inbox.
             </p>
           </motion.div>
 
@@ -271,16 +285,6 @@ export default function SupportMain() {
                 <ChannelCard ch={ch} />
               </motion.div>
             ))}
-            <motion.div variants={item}>
-              <ChannelCard
-                ch={{
-                  icon: Compass,
-                  title: "Docs",
-                  desc: "Developer & protocol documentation. In the works.",
-                  soon: true,
-                }}
-              />
-            </motion.div>
 
             {/* Common questions panel */}
             <motion.div
@@ -314,6 +318,50 @@ export default function SupportMain() {
                 />
               </Link>
             </motion.div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ── Ticket form (lavender) ──────────────────────────────────────────── */}
+      <section id="ticket" className="relative w-full scroll-mt-24 overflow-hidden bg-bg py-20 md:py-28">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute left-1/2 top-0 -z-10 h-[420px] w-[820px] max-w-[120%] -translate-x-1/2 rounded-full blur-[140px]"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(139,111,224,0.12) 0%, rgba(139,111,224,0) 72%)",
+          }}
+        />
+        <div className="mx-auto grid w-full max-w-[1180px] gap-12 px-5 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.5 }}
+            transition={{ duration: reduce ? 0 : 0.7, ease: EASE_OUT }}
+          >
+            <span className="font-mono text-[0.7rem] uppercase tracking-[0.22em] text-accent-deep">
+              Open a ticket
+            </span>
+            <h2 className="mt-4 font-display text-3xl font-bold leading-[1.06] tracking-tight text-ink sm:text-4xl">
+              Reach the team directly.
+            </h2>
+            <p className="mt-4 max-w-md text-base leading-relaxed text-ink-muted">
+              Tickets land straight in the team inbox and we reply to your email. For anything
+              urgent or interactive, the Telegram is still the fastest channel.
+            </p>
+            <p className="mt-4 max-w-md text-[0.8rem] leading-relaxed text-ink-dim">
+              Helpful to include: what you were doing, the network, and a transaction hash. Never
+              share your seed phrase or note secrets — we will never ask for them.
+            </p>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.25 }}
+            transition={{ duration: reduce ? 0 : 0.7, ease: EASE_OUT }}
+            className="relative rounded-3xl border border-ink/[0.08] bg-surface/80 p-6 shadow-[0_30px_80px_-55px_rgba(107,79,207,0.5)] backdrop-blur-[8px] sm:p-8"
+          >
+            <SupportTicket />
           </motion.div>
         </div>
       </section>
