@@ -1,0 +1,212 @@
+{
+  "title": "Terms of Service",
+  "subtitle": "The terms that govern your access to and use of the MaskedUSD website, protocol interface, and related software.",
+  "updated": "July 3, 2026",
+  "intro": [
+    "These Terms of Service (the \"Terms\") form a binding agreement between you (\"you\" or \"user\") and the operators of MaskedUSD (\"MaskedUSD,\" \"we,\" \"us,\" or \"our\") governing your access to and use of the MaskedUSD website, the protocol interface (the \"App\"), the whitepaper and documentation, and any related software, content, and services we make available (together, the \"Services\").",
+    "MaskedUSD is a set of non-custodial, immutable smart contracts deployed on the Base network (an Ethereum layer-2 network) together with a website and interface that help you interact with those contracts from your own self-custodied wallet. We do not operate a bank, an exchange, a broker, a custodian, or a money transmitter, we do not take possession of your funds or your keys, and we do not provide financial, investment, legal, or tax advice.",
+    "Please read these Terms carefully. They include important provisions about the experimental and irreversible nature of blockchain transactions, an assumption of risk, disclaimers of warranties, a limitation of our liability, an indemnity, and your responsibility to comply with the laws that apply to you. By accessing or using the Services, you accept these Terms in full. If you do not agree, do not access or use the Services."
+  ],
+  "sections": [
+    {
+      "id": "acceptance",
+      "title": "Acceptance of Terms",
+      "paragraphs": [
+        "By accessing, browsing, connecting a wallet to, or otherwise using any part of the Services, you acknowledge that you have read, understood, and agree to be bound by these Terms and by any additional policies referenced in them, including our Privacy Policy. If you use the Services on behalf of an entity, you represent that you are authorized to bind that entity, and \"you\" refers to that entity.",
+        "These Terms apply to all users of the Services. If you do not agree with any part of these Terms, your only remedy is to stop accessing and using the Services. Your continued use after any changes to these Terms take effect constitutes acceptance of the revised Terms."
+      ],
+      "bullets": []
+    },
+    {
+      "id": "eligibility",
+      "title": "Eligibility",
+      "paragraphs": [
+        "To use the Services you must be at least the age of majority in your jurisdiction and have the legal capacity to enter into these Terms. The Services are not directed to, and may not be used by, anyone who does not meet these requirements.",
+        "You are solely responsible for determining whether, and for ensuring that, your access to and use of the Services is lawful in your jurisdiction. You represent and warrant that you are not located in, ordinarily resident in, or a national of any jurisdiction where accessing or using the Services is prohibited, that you are not subject to any sanctions administered or enforced by any government, and that you are not listed on any sanctions or restricted-party list. You may not use the Services if doing so would violate any law, regulation, or sanction that applies to you."
+      ],
+      "bullets": [
+        "You must meet the minimum legal age and have capacity to contract.",
+        "You must not be a sanctioned or restricted party, or acting on behalf of one.",
+        "You must not access the Services from, or on behalf of anyone in, a jurisdiction where such access is prohibited.",
+        "You are responsible for your own compliance with all laws that apply to you, including tax, securities, and financial-services laws."
+      ]
+    },
+    {
+      "id": "nature-of-protocol",
+      "title": "Nature of the Protocol",
+      "paragraphs": [
+        "MaskedUSD is non-custodial. The protocol operators never hold, control, or have access to your funds, your wallet, your private keys, your recovery phrase, or your shielded note secrets. You alone control your wallet and everything in it. There are no user accounts on the website, no logins, and no server-side database of user funds; there is nothing for us to sign into on your behalf and nothing we can move for you.",
+        "The MaskedUSD smart contracts are immutable and are not upgradeable. Once deployed, their logic cannot be changed by us or by anyone else. Because your assets remain in your own self-custody or in permissionless, immutable contracts you interact with directly, we cannot move, freeze, reverse, seize, or recover your self-custodied assets, and we cannot reverse or undo any transaction you sign.",
+        "The website and App are convenience interfaces that help you construct and broadcast transactions to the public Base network from your own wallet. The underlying contracts are permissionless and can be accessed independently of our interface. We do not guarantee that the website or App will remain available, and their unavailability does not affect the operation of the on-chain contracts.",
+        "A limited on-chain \"guardian\" role exists in the protocol. Its capabilities are confined to accepting the association-set roots that gate the unshield operation and to pausing certain functions. The guardian does not, and cannot, custody, move, freeze, spend, or otherwise access user funds. Because pausing a function can affect the availability of certain operations at a given time, we disclose this role for transparency; it does not make the Services custodial."
+      ],
+      "bullets": []
+    },
+    {
+      "id": "usdm",
+      "title": "$USDM",
+      "paragraphs": [
+        "$USDM is a public dollar-denominated token that you can mint by depositing native USDC and redeem back for native USDC through the protocol's mint and redeem contracts. The USDC backing is held in an immutable vault contract. Mint and redeem are designed to occur on a 1:1 basis and to be available at any time, subject to network conditions and on-chain contract logic (including any pause described above).",
+        "$USDM is not a bank deposit, is not a savings or checking account, and is not insured or guaranteed by any deposit-insurance scheme, government, or third party. $USDM is not interest-bearing and does not pay yield, rewards, or any return of any kind. Holding $USDM does not entitle you to any payment, distribution, dividend, or profit.",
+        "We make no representation, warranty, or guarantee that $USDM will maintain any particular value, will trade at or hold any peg to the U.S. dollar or to USDC, or that any level of secondary-market liquidity will exist at any given time. The value of $USDM may deviate from one dollar on secondary markets, and on-chain redemption may be affected by network congestion or contract state. You bear the full risk of holding, transferring, and redeeming $USDM.",
+        "$USDM balances may be \"shielded\" into a private balance using the opt-in shielded pool described below. Shielding, transferring, and unshielding are on-chain operations you initiate and sign yourself."
+      ],
+      "bullets": []
+    },
+    {
+      "id": "musd",
+      "title": "$MUSD",
+      "paragraphs": [
+        "$MUSD is a separate token from $USDM and is launched on Clanker, a third-party token-launch venue. $MUSD is not backed by USDC or by any other asset, is not minted or redeemable through the protocol, and is entirely distinct from the $USDM mint/redeem system. Nothing about $USDM's backing, mechanics, or redeemability applies to $MUSD.",
+        "$MUSD is volatile and unbacked. It pays no yield, no interest, no rewards, no dividends, and no return of any kind. $MUSD is intended solely as a community and access utility token. It is not an investment, is not a security, is not a share, and does not represent any equity, debt, ownership interest, governance right, or claim on MaskedUSD, its operators, or any assets or revenues. Acquiring or holding $MUSD carries no expectation or promise of profit, appreciation, or income, and any market value it may have derives solely from third-party market activity outside our control.",
+        "The MaskedUSD team holds no $MUSD. We do not manage, market-make, guarantee, or support the price or liquidity of $MUSD, and we are not responsible for the conduct of any third-party venue, market, or holder. You are solely responsible for any decision to acquire, hold, transfer, or dispose of $MUSD, and you assume the full risk of doing so, including the risk of total loss."
+      ],
+      "bullets": []
+    },
+    {
+      "id": "privacy-features",
+      "title": "Privacy Features and Lawful Use",
+      "paragraphs": [
+        "The Services include an opt-in shielded pool that uses client-side zero-knowledge proofs to let you hold and transfer $USDM privately. Use of the shielded pool is entirely optional. When you shield funds, the amount entering the pool is recorded publicly on-chain; what the shielded pool conceals is the ownership and linkage of shielded notes and your subsequent in-pool balances and transfers. You should not assume that shielding hides the amount you deposit into or withdraw from the pool.",
+        "The privacy features are provided for lawful use only. MaskedUSD is expressly not a mixer, tumbler, or anonymization service, and the shielded pool incorporates association sets and on-chain screening hooks so that privacy is designed to complement compliance rather than defeat it.",
+        "You may not use the Services, and in particular the privacy features, to launder money, to conceal or disguise the proceeds of criminal activity, to finance terrorism, to evade sanctions, to defeat a lawful investigation, or otherwise to break the law or facilitate any unlawful conduct. Any such use is a material breach of these Terms and is strictly prohibited. You are solely responsible for the legality of your use of the privacy features under the laws that apply to you."
+      ],
+      "bullets": []
+    },
+    {
+      "id": "no-advice",
+      "title": "No Financial, Legal, or Tax Advice",
+      "paragraphs": [
+        "The Services, the website, the whitepaper, the documentation, and any content we provide are for general informational purposes only and do not constitute financial, investment, legal, accounting, or tax advice, nor a recommendation, solicitation, or offer to buy, sell, or hold any token or to enter into any transaction. No fiduciary or advisory relationship is created by your use of the Services.",
+        "You are solely responsible for evaluating the merits and risks of any transaction and for determining its treatment under the laws that apply to you. You should consult your own qualified financial, legal, and tax advisors before using the Services or transacting in any token."
+      ],
+      "bullets": []
+    },
+    {
+      "id": "assumption-of-risk",
+      "title": "Assumption of Risk",
+      "paragraphs": [
+        "You understand and accept that using blockchain networks, digital assets, and experimental smart-contract software carries significant risk, and you assume all such risk. Without limiting the generality of the foregoing, you acknowledge and accept the following risks."
+      ],
+      "bullets": [
+        "Smart-contract risk: the contracts may contain bugs, vulnerabilities, or errors, may behave unexpectedly, and are immutable and cannot be patched; an exploit or defect could result in loss of funds.",
+        "Market and volatility risk: the value of digital assets, including $USDM and especially $MUSD, can be highly volatile and may fall to zero; there is no guarantee of value, peg, liquidity, or a market.",
+        "Irreversibility: blockchain transactions are final and irreversible once confirmed; a mistaken, fraudulent, or unintended transaction cannot be reversed by us or anyone.",
+        "Key-loss risk: your wallet keys, recovery phrase, and shielded note secrets are the sole means of controlling your funds; if you lose them, or if they are compromised, your funds are permanently and irrecoverably lost, and no recovery, reset, or restoration by us is possible.",
+        "Regulatory risk: laws and regulations affecting digital assets, stablecoins, and privacy technology are evolving and uncertain; changes could adversely affect the Services, the tokens, or your ability to use them.",
+        "Third-party and infrastructure risk: wallets, RPC providers, the underlying network, and other third-party services may fail, be compromised, become unavailable, or behave unexpectedly, which is outside our control.",
+        "Network risk: congestion, forks, reorganizations, failed transactions, and fluctuating network fees may affect your ability to transact or the outcome of your transactions."
+      ]
+    },
+    {
+      "id": "third-party",
+      "title": "Third-Party Services and Wallets",
+      "paragraphs": [
+        "To use the Services you connect a self-custodied wallet you control. Supported wallet connectors are MetaMask, Coinbase Wallet, and Phantom. These wallets, and any browser extensions or software you use with them, are provided by third parties, are governed by their own terms and privacy policies, and are solely responsible for the custody of your keys and the signing of your transactions. We do not control and are not responsible for any third-party wallet.",
+        "The Services also rely on and interoperate with third parties we do not control, including public and third-party RPC providers used to read from and write to the network, block explorers you may choose to visit, the Base and Ethereum public blockchains, an email-delivery provider used only to relay support tickets you choose to submit, and hosting infrastructure. For the separate $MUSD token, Clanker is referenced as its launch venue. Some of these providers may, in the ordinary course of serving your requests, observe network-level information such as your IP address and the addresses or queries involved; your use of any third-party service is at your own risk and subject to that third party's terms.",
+        "We are not responsible or liable for the acts, omissions, availability, security, accuracy, or content of any third-party service, and inclusion of or reference to any third party does not constitute an endorsement."
+      ],
+      "bullets": []
+    },
+    {
+      "id": "intellectual-property",
+      "title": "Intellectual Property",
+      "paragraphs": [
+        "Except for content that is open-source, on-chain, or otherwise expressly made available under a separate license, the website, App, whitepaper, documentation, text, graphics, design, the MaskedUSD name and marks, and other materials we provide are owned by us or our licensors and are protected by intellectual-property laws. Subject to your compliance with these Terms, we grant you a limited, personal, non-exclusive, non-transferable, revocable license to access and use the Services for their intended purpose.",
+        "You may not copy, modify, distribute, sell, lease, reverse-engineer (except to the extent this restriction is prohibited by applicable law), or create derivative works from any part of the Services or our materials except as expressly permitted by us in writing or by an applicable open-source license. All rights not expressly granted are reserved. The names, logos, and marks of third parties are the property of their respective owners.",
+        "The MaskedUSD name and marks may not be used to imply an affiliation, endorsement, or sponsorship that does not exist, or in a manner likely to cause confusion, including in connection with impersonation or fraudulent schemes."
+      ],
+      "bullets": []
+    },
+    {
+      "id": "prohibited-conduct",
+      "title": "Prohibited Conduct",
+      "paragraphs": [
+        "You agree not to engage in, and not to attempt or assist others in, any of the following in connection with the Services."
+      ],
+      "bullets": [
+        "Violating any applicable law, regulation, or sanction, or using the Services to facilitate any unlawful activity.",
+        "Using the privacy features to launder funds, conceal proceeds of crime, finance terrorism, evade sanctions, defeat a lawful investigation, or otherwise break the law.",
+        "Accessing the Services from, or on behalf of anyone in, a prohibited jurisdiction, or while a sanctioned or restricted party.",
+        "Interfering with, disrupting, overloading, or attempting to gain unauthorized access to the Services, our infrastructure, or any related systems, including via scraping, denial-of-service, or exploitation of vulnerabilities.",
+        "Impersonating MaskedUSD, our team, or any other person or entity, or misrepresenting your affiliation with any of them.",
+        "Introducing malware or malicious code, or submitting false, misleading, or abusive information, including through the support form or its anti-abuse mechanisms.",
+        "Infringing the intellectual-property or other rights of any person, or using the Services to defraud, deceive, or harm others."
+      ]
+    },
+    {
+      "id": "disclaimers",
+      "title": "Disclaimers",
+      "paragraphs": [
+        "The Services and all related software, content, and materials are provided \"as is\" and \"as available,\" with all faults and without warranties of any kind, whether express, implied, statutory, or otherwise. To the fullest extent permitted by law, we disclaim all warranties, including any implied warranties of merchantability, fitness for a particular purpose, title, non-infringement, and any warranties arising from course of dealing or usage of trade.",
+        "We do not warrant that the Services will be uninterrupted, timely, secure, error-free, or free of harmful components; that any defects will be corrected; that the results obtained from the Services will be accurate or reliable; that any token will maintain any value, peg, or liquidity; or that the immutable contracts are free of vulnerabilities. Any material downloaded or otherwise obtained through the Services is accessed at your own discretion and risk, and you are solely responsible for any resulting damage or loss.",
+        "No advice or information, whether oral or written, obtained from us or through the Services, creates any warranty not expressly stated in these Terms. Some jurisdictions do not allow the exclusion of certain warranties, so some of the above exclusions may not apply to you to the extent prohibited by applicable law."
+      ],
+      "bullets": []
+    },
+    {
+      "id": "limitation-of-liability",
+      "title": "Limitation of Liability",
+      "paragraphs": [
+        "To the fullest extent permitted by applicable law, in no event will MaskedUSD, its operators, affiliates, contributors, officers, employees, agents, or licensors be liable for any indirect, incidental, special, consequential, exemplary, or punitive damages, or for any loss of profits, revenue, data, goodwill, digital assets, or business opportunity, arising out of or relating to your access to or use of, or inability to access or use, the Services or any tokens, whether based in contract, tort, negligence, strict liability, or any other legal theory, and whether or not we have been advised of the possibility of such damages.",
+        "Without limiting the foregoing, we are not liable for any loss arising from smart-contract defects or exploits, price volatility or loss of value or peg, irreversible or mistaken transactions, loss or compromise of your keys, recovery phrase, or note secrets, the acts or omissions of third-party wallets, RPC providers, or other third parties, network conditions, or your failure to comply with applicable law.",
+        "To the fullest extent permitted by law, our total aggregate liability for all claims relating to the Services will not exceed the greater of the total amount of fees you paid to us directly for use of the Services in the twelve months preceding the event giving rise to the claim, or one hundred U.S. dollars (USD 100). Some jurisdictions do not allow certain limitations of liability, so some of the above limitations may not apply to you to the extent prohibited by applicable law; in such cases our liability is limited to the maximum extent permitted. Nothing in these Terms excludes or limits any liability that cannot be excluded or limited under applicable law."
+      ],
+      "bullets": []
+    },
+    {
+      "id": "indemnification",
+      "title": "Indemnification",
+      "paragraphs": [
+        "You agree to indemnify, defend, and hold harmless MaskedUSD, its operators, affiliates, contributors, and their respective officers, employees, agents, and licensors from and against any and all claims, demands, actions, damages, losses, liabilities, costs, and expenses (including reasonable legal fees) arising out of or relating to your access to or use of the Services, your violation of these Terms, your violation of any law or of the rights of any third party, any tokens you acquire, hold, transfer, or dispose of, or any transaction you sign.",
+        "We reserve the right, at our own expense, to assume the exclusive defense and control of any matter otherwise subject to indemnification by you, in which case you agree to cooperate with our defense of that claim. This indemnification obligation survives the termination of these Terms and your use of the Services."
+      ],
+      "bullets": []
+    },
+    {
+      "id": "suspension",
+      "title": "Suspension and Termination of Access",
+      "paragraphs": [
+        "We may, at our discretion and without notice or liability, suspend, restrict, or discontinue the website or App, in whole or in part, or restrict your access to them, including where we reasonably believe doing so is necessary to comply with law, to protect the Services or other users, or to address a security issue. Because the underlying contracts are permissionless and immutable, any such action affects only our interface and does not, and cannot, affect your on-chain assets, your self-custody, or your ability to interact with the contracts directly.",
+        "You may stop using the Services at any time. The provisions of these Terms that by their nature should survive termination — including the token disclaimers, assumption of risk, disclaimers, limitation of liability, indemnification, governing law, and these general provisions — will survive."
+      ],
+      "bullets": []
+    },
+    {
+      "id": "governing-law",
+      "title": "Governing Law and Dispute Resolution",
+      "paragraphs": [
+        "These Terms, and any dispute or claim arising out of or in connection with them or their subject matter (including non-contractual disputes or claims), are governed by and construed in accordance with the laws of the jurisdiction in which the operators of MaskedUSD are established, without regard to its conflict-of-laws principles. The courts of that jurisdiction will have exclusive jurisdiction to settle any such dispute, and you submit to their jurisdiction, except where mandatory law grants you the right to bring proceedings in, or requires application of the law of, another jurisdiction.",
+        "Nothing in this section limits your responsibility to comply with the laws that apply to you in your own jurisdiction, and the choice of governing law above does not deprive you of the protection of any mandatory consumer or other laws of your place of residence that cannot be derogated from by agreement. To the extent permitted by applicable law, you and we agree that any dispute will be resolved on an individual basis and not as part of any class or representative proceeding."
+      ],
+      "bullets": []
+    },
+    {
+      "id": "general",
+      "title": "General Provisions",
+      "paragraphs": [
+        "These Terms, together with any policies expressly referenced in them (including our Privacy Policy), constitute the entire agreement between you and us regarding the Services and supersede any prior or contemporaneous understandings on that subject. If any provision of these Terms is held to be invalid, illegal, or unenforceable, that provision will be enforced to the maximum extent permissible and the remaining provisions will remain in full force and effect.",
+        "Our failure to enforce any right or provision of these Terms is not a waiver of that right or provision, and no waiver is effective unless made in writing. You may not assign or transfer these Terms or any of your rights or obligations under them without our prior written consent; we may assign these Terms in connection with a reorganization, transfer, or similar event. These Terms do not create any partnership, joint venture, agency, or employment relationship between you and us. We will not be liable for any failure or delay in performance to the extent caused by events beyond our reasonable control."
+      ],
+      "bullets": []
+    },
+    {
+      "id": "changes",
+      "title": "Changes to These Terms",
+      "paragraphs": [
+        "We may update or modify these Terms from time to time. When we do, we will revise the \"Last updated\" date shown above and post the updated Terms through the Services. Changes are effective when posted unless we indicate otherwise.",
+        "Your continued access to or use of the Services after the updated Terms take effect constitutes your acceptance of them. If you do not agree to the revised Terms, you must stop using the Services. We encourage you to review these Terms periodically."
+      ],
+      "bullets": []
+    },
+    {
+      "id": "contact",
+      "title": "Contact",
+      "paragraphs": [
+        "If you have questions about these Terms, you can reach us through the support form on the website or by email at support@maskedusd.com.",
+        "Please do not include your recovery phrase, private keys, or shielded note secrets in any message to us; we will never ask for them, and anyone who does is attempting to defraud you."
+      ],
+      "bullets": []
+    }
+  ]
+}

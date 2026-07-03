@@ -283,9 +283,17 @@ export default function Footer() {
         {/* ── Bottom bar ──────────────────────────────────────────────────── */}
         <motion.div
           variants={item}
-          className="mt-14 flex flex-col gap-3 border-t border-ink/10 pt-6 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-ink-dim sm:flex-row sm:items-center sm:justify-between"
+          className="mt-14 flex flex-col gap-4 border-t border-ink/10 pt-6 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-ink-dim sm:flex-row sm:items-center sm:justify-between"
         >
           <span>&copy; 2026 MaskedUSD &middot; Building on Base</span>
+          <div className="flex items-center gap-5">
+            <a href="/privacy" className="transition-colors hover:text-ink">
+              Privacy Policy
+            </a>
+            <a href="/terms" className="transition-colors hover:text-ink">
+              Terms
+            </a>
+          </div>
           <span>Live on Base &middot; Not financial advice</span>
         </motion.div>
       </motion.div>

@@ -1,0 +1,198 @@
+{
+  "title": "Privacy Policy",
+  "subtitle": "How the MaskedUSD website handles information — and why, by design, it holds almost none of it.",
+  "updated": "July 3, 2026",
+  "intro": [
+    "MaskedUSD is a non-custodial protocol and website. There are no user accounts, no logins, and no back-end database of users. We do not custody your funds, and we never receive or store your wallet's private keys, seed phrase, or the note secrets that control your shielded balance. The overwhelming majority of what you do here happens either directly between your wallet and the public blockchain, or entirely inside your own browser.",
+    "This Privacy Policy explains the narrow set of situations in which any information is actually handled in connection with the website — most importantly the optional support form — and it is deliberately specific so that it matches how the software really works. Where a common privacy practice does not apply to us (for example, tracking cookies or advertising analytics), we say so plainly rather than reserving rights we do not exercise.",
+    "This policy describes the maskedusd.com website and its associated interface (the \"Site\"). It does not, and cannot, change the behavior of the public blockchain, your self-custody wallet, or any third-party service you independently choose to use. Please read the sections on blockchain publicity and third-party services carefully — they cover data that is outside our control by design."
+  ],
+  "sections": [
+    {
+      "id": "scope",
+      "title": "Introduction and scope",
+      "paragraphs": [
+        "This Privacy Policy applies to the MaskedUSD website and interface (the \"Site\"), including the informational pages, the whitepaper, the support form, and the client-side application (the \"dApp\") used to mint, redeem, shield, and transfer tokens. In this policy, \"we,\" \"us,\" and \"our\" refer to the MaskedUSD project team operating the Site.",
+        "MaskedUSD is non-custodial and its on-chain contracts are described as immutable (not upgradeable). This has a direct privacy consequence: there is no account to create, nothing to log into, and no server-side store of user balances, activity, or credentials maintained by the Site. Your wallet and your browser are where your data lives.",
+        "This policy does not cover the practices of independent third parties — including your wallet software, blockchain networks, RPC providers, block explorers, or the email delivery provider used for support — except to describe what information reaches them and why. Their own terms and privacy policies govern their handling of that data.",
+        "This policy is provided for transparency. It is not legal, financial, or tax advice."
+      ],
+      "bullets": []
+    },
+    {
+      "id": "blockchain-public",
+      "title": "The nature of a blockchain — what is public",
+      "paragraphs": [
+        "MaskedUSD operates on Base, a public blockchain. Public blockchains are, by design, permanent and open: anyone can read them, and transactions cannot be edited or deleted. When you transact, you are publishing data to a public ledger — not to us. We do not control the blockchain and cannot remove, alter, or conceal anything recorded on it.",
+        "The following are inherently public on-chain, permanently and to anyone: your connected wallet address and its public activity; mint transactions (USDC to $USDM) and redeem transactions ($USDM to USDC), including the addresses and amounts involved; ordinary (unshielded) ERC-20 transfers; and all contract addresses.",
+        "The opt-in shielded pool is engineered to keep certain activity private, but not everything. Entering the pool (a \"shield\" operation) publishes a commitment, a leaf index, and the shielded amount — so the value entering the pool is visible on-chain, even though who owns the resulting note is not. Exiting the pool (an \"unshield\") and any unshielded transfer are likewise visible. Nullifiers, commitment-tree roots, and the encrypted note-memo channel's commitments and ciphertext blobs are also on-chain.",
+        "What the shielded pool keeps private, behind zero-knowledge proofs, is: your shielded balance; the link between a shielded note and its owner; and, for a private in-pool transfer, the amount and the relationship between sender and recipient. In short — entering and exiting the pool are visible; activity within the pool is not. You should treat all on-chain data you generate as public and permanent.",
+        "For full transparency: although the contracts are immutable, a limited on-chain \"guardian\" role exists in the protocol. It can accept the association roots that gate unshield operations and can pause certain functions. This role does not custody, move, or access any user funds, keys, or note secrets, and it does not give us access to your balances, activity, or any private (shielded) information. It is noted here only so the \"immutable, holds nothing\" description is not read as implying the protocol has no administrative capabilities at all."
+      ],
+      "bullets": []
+    },
+    {
+      "id": "not-collected",
+      "title": "Information we do NOT collect",
+      "paragraphs": [
+        "To set clear expectations, here is what the Site does not do:"
+      ],
+      "bullets": [
+        "We do not create user accounts and do not have logins, usernames, or passwords.",
+        "We do not perform KYC or identity verification on the Site, and we do not ask for your legal name, government ID, date of birth, or physical address as a condition of using the interface.",
+        "We never receive or store your wallet's private keys, seed phrase, recovery phrase, or shielded note secrets. These are the spending authority for your funds and they never leave your device.",
+        "We do not operate a back-end database that records your wallet address, balances, transactions, or usage. The Site has no server that ingests or stores your on-chain identity.",
+        "We do not sell personal information, and we do not use advertising, cross-site tracking, or behavioral profiling.",
+        "We do not set tracking or advertising cookies (see the Cookies and analytics section)."
+      ]
+    },
+    {
+      "id": "info-handled",
+      "title": "Information handled when you use the Site",
+      "paragraphs": [
+        "There are a small number of ways information is handled in connection with the Site. We describe each precisely.",
+        "Support form (optional). If you choose to submit our support form, we handle only the fields you provide: your name (free text), your email address, a support topic chosen from a fixed list (General, App issue, Mint, Redeem, Shielded balance, or Partnerships), and your message (free text). The message box is free-form, and its placeholder invites you to include a transaction hash or your wallet address if that helps us resolve a transaction-specific issue — so those details may be transmitted, but only if you type them. The form explicitly warns you never to include your seed phrase or note secrets, and you should not. The form also contains a hidden anti-bot field (a \"honeypot\") that legitimate users leave empty; it is a spam decoy, not personal data in normal use.",
+        "Wallet address exposure. When you connect a wallet, your public wallet address is handled entirely client-side (in your browser): it is read from your wallet, shown in the interface, used to organize local storage, and included in the on-chain reads and writes your wallet performs. The Site has no server that receives or stores your address. It only reaches us if you voluntarily paste it into a support message.",
+        "Wallet signature for shielded identity. If you use the shielded features, the interface asks your wallet to sign a fixed, account-bound message in order to derive your shielded keys. That signature and every key derived from it are bearer secrets held only in your browser tab's memory — never persisted to storage and never transmitted to any server.",
+        "Technical and log data (via hosting and RPC providers). Like any website, serving the Site necessarily exposes basic request metadata — such as your IP address and browser user-agent — to the hosting/edge platform, and to the blockchain RPC providers your wallet and the interface contact to read and submit on-chain data. Our application code does not add this metadata to any payload or store it in a database; it is technical information those infrastructure providers see as a normal part of delivering the service. See Third-party services below."
+      ],
+      "bullets": []
+    },
+    {
+      "id": "client-side-storage",
+      "title": "Data stored in your browser",
+      "paragraphs": [
+        "The dApp stores certain data locally in your browser (via localStorage) so that your shielded activity can work across page reloads. This data stays on your device. It is not synced to us and there is no server-side copy.",
+        "The most sensitive of this data — your shielded note secrets, which are the spending authority for your private funds — is encrypted at rest in your browser using AES-256-GCM under a key derived from your wallet. The encryption is bound to your specific account and chain so it cannot be lifted to another account or network, and the key itself lives only in your tab's memory, never on disk.",
+        "Because this data lives on your device, clearing your browser storage, using a different browser or device, or losing access to your wallet can affect your ability to recover locally stored information. You are responsible for safeguarding your wallet and your device.",
+        "Specifically, the following may be stored in your browser:"
+      ],
+      "bullets": [
+        "Shielded note store — your private note secrets (including value, keys, blinding, commitment, and status). Encrypted at rest with AES-256-GCM under a wallet-derived key, bound to your account and chain.",
+        "Notifications store — per-wallet in-app notices (such as a \"received\" payment notice, which can include an amount). Also encrypted at rest with the same wallet-derived key.",
+        "Pending note-memo queue — encrypted note payloads awaiting on-chain posting. Stored as-is, because the payload is already end-to-end encrypted to the recipient and the related commitment is already public on-chain, so no secret is exposed.",
+        "Shielded identity and wallet signature — the derived viewing/encryption key, encryption-at-rest key, and spend key, together with the underlying signature, held only in your tab's memory for the session and dropped on disconnect or account/chain change; never written to storage.",
+        "Wallet-connection state — standard wallet-library data that remembers your last connection so your session persists across reloads. It stores connection/account details, never private keys."
+      ]
+    },
+    {
+      "id": "third-parties",
+      "title": "Third-party services",
+      "paragraphs": [
+        "Using the Site necessarily involves a small number of independent third parties. We do not control these providers, and their own privacy policies apply to the data they receive.",
+        "We do not sell or rent personal information to anyone, and we do not share it with third parties except as needed to provide the functions described here."
+      ],
+      "bullets": [
+        "Email delivery (Resend). When you submit the support form, its contents — your name, email, topic, message, and a short ticket ID — are relayed to our support inbox through the Resend email API in order to deliver the notification email. This is the only path by which information you enter on the Site leaves to a third party.",
+        "RPC providers. To read balances and submit transactions, your wallet and the interface contact blockchain RPC endpoints (which may include a configured provider such as Alchemy, and public Base endpoints). These providers see the requesting IP address and the addresses and queries involved.",
+        "Wallet providers. MetaMask, Coinbase Wallet, and Phantom are the supported wallet connectors. They handle your key custody and signing. (Note: although one internal interface component is named \"WalletConnectModal,\" the Site does not use the WalletConnect/Reown protocol.)",
+        "Block explorer (Basescan). The interface offers \"View on Basescan\" links for addresses and transactions. Your browser contacts Basescan only if you click such a link.",
+        "Hosting/edge platform. Our hosting provider serves the Site and runs the support route, and — like any host — sees request-level metadata such as IP address and user-agent.",
+        "Community channels (e.g., Telegram). We reference off-site community and support channels. If you choose to visit them, you leave the Site and their operators' policies apply. No data is sent to them programmatically by the Site."
+      ]
+    },
+    {
+      "id": "cookies-analytics",
+      "title": "Cookies and analytics",
+      "paragraphs": [
+        "The Site does not use analytics, advertising, or behavioral-tracking tools, and it does not set tracking cookies. We have not embedded any analytics or telemetry service, and the interface sets no first-party cookies of its own.",
+        "The only client-side persistence the Site uses is browser localStorage — described in \"Data stored in your browser\" above — which is used for the shielded application's own functionality, not to track you across sites.",
+        "Separately, and outside our application's control, the third-party infrastructure providers described above (such as the hosting platform, RPC providers, and the email delivery provider) may keep their own server-side request logs as a normal part of operating their services."
+      ],
+      "bullets": []
+    },
+    {
+      "id": "how-used",
+      "title": "How information is used",
+      "paragraphs": [
+        "Because the Site handles so little information, the purposes are correspondingly narrow. We use the limited information described in this policy only to:"
+      ],
+      "bullets": [
+        "Respond to you. Support-form contents are used solely to receive, understand, and reply to your inquiry, and to reference your ticket ID.",
+        "Operate the interface. Your connected wallet address and any signature you approve are used client-side to display balances, organize your local data, and construct the on-chain reads and transactions you initiate.",
+        "Deliver and secure the Site. Technical request metadata seen by our infrastructure providers is used by them to serve the Site, route traffic, and protect against abuse.",
+        "Prevent spam. The hidden honeypot field is used only to filter out automated form submissions."
+      ]
+    },
+    {
+      "id": "disclosure",
+      "title": "Disclosure and sharing",
+      "paragraphs": [
+        "We do not sell personal information, and we do not share it for advertising or profiling.",
+        "Support-form contents are disclosed to our email delivery provider strictly to deliver your message to our inbox, as described above. Technical request metadata is inherently visible to the infrastructure providers that serve the Site. Beyond these operational disclosures, we do not routinely share information — and in most cases there is simply nothing for us to share, because we hold no accounts, balances, or activity records.",
+        "We may disclose the limited information we do hold (in practice, support correspondence) if we reasonably believe disclosure is required to comply with a valid legal obligation, to enforce our terms, or to protect the rights, safety, or security of users, the public, or the project. We cannot disclose information we do not possess — including your keys, note secrets, or any server-side record of your on-chain activity, none of which exist on our side.",
+        "Nothing in this policy affects the public nature of blockchain data. Data recorded on-chain is disclosed to the entire network by the design of the blockchain, not by us."
+      ],
+      "bullets": []
+    },
+    {
+      "id": "retention",
+      "title": "Data retention",
+      "paragraphs": [
+        "We do not maintain a database of users, and support tickets are not stored in any such database by the Site. Support correspondence exists as email in our inbox, and we retain it only as long as reasonably needed to handle your request and for ordinary record-keeping, after which it may be deleted.",
+        "Data stored in your browser (the encrypted note store, notifications, pending memo queue, and wallet-connection state) is retained on your device until you or your browser clear it; it is under your control, not ours.",
+        "Data recorded on the public blockchain is permanent and cannot be deleted or altered by us or by anyone. This is an inherent property of the network."
+      ],
+      "bullets": []
+    },
+    {
+      "id": "security",
+      "title": "Security",
+      "paragraphs": [
+        "Our privacy posture is built on minimizing what can be lost: the Site holds no accounts, no keys, and no central store of user activity, so there is no honeypot of personal data for an attacker to reach through us.",
+        "Sensitive client-side data — your shielded note secrets and in-app notifications — is encrypted at rest in your browser with AES-256-GCM under a wallet-derived key that is bound to your account and chain and never written to disk. Your keys, seed phrase, and note secrets never leave your device and are never transmitted to any server.",
+        "No method of transmission or storage is perfectly secure, and much of your protection depends on you. Safeguard your wallet, seed phrase, and device; never share your seed phrase or note secrets with anyone, including anyone claiming to be from support; and be cautious of impersonators. We will never ask you for your seed phrase or note secrets."
+      ],
+      "bullets": []
+    },
+    {
+      "id": "choices-rights",
+      "title": "Your choices and rights",
+      "paragraphs": [
+        "Because we hold very little information, most control rests directly with you:"
+      ],
+      "bullets": [
+        "You can choose not to submit the support form; providing your name, email, and message is entirely voluntary and only happens if you contact us.",
+        "You can control the data stored in your browser at any time by clearing your browser's local storage for the Site (note that clearing shielded data may affect your ability to access locally stored note information — do so carefully).",
+        "You can disconnect your wallet at any time, which drops the in-memory shielded identity for that session.",
+        "For the limited information we do hold — your support correspondence — you may contact us to request access to it or its deletion, and we will honor reasonable requests consistent with our legal and operational obligations. We cannot act on data we do not possess (such as your keys, note secrets, or on-chain records), and we cannot alter or erase anything already recorded on the public blockchain."
+      ]
+    },
+    {
+      "id": "international",
+      "title": "International users",
+      "paragraphs": [
+        "The Site is accessible from many locations, and the third-party infrastructure that delivers it — hosting, RPC, and email providers — may process technical data in various jurisdictions. Public blockchain data is, by nature, replicated globally across the network.",
+        "By using the Site, you understand that any information handled as described in this policy may be processed in locations outside your own country, where data-protection laws may differ from those where you reside. We aim to handle the limited information involved consistently with the principles described here regardless of where it is processed."
+      ],
+      "bullets": []
+    },
+    {
+      "id": "children",
+      "title": "Children",
+      "paragraphs": [
+        "The Site is not directed to children, and it is not intended for anyone under the age of 18 (or the age of majority in your jurisdiction, if higher). We do not knowingly collect information from children.",
+        "If you believe a minor has submitted information to us through the support form, please contact us so we can address it and delete the correspondence."
+      ],
+      "bullets": []
+    },
+    {
+      "id": "changes",
+      "title": "Changes to this policy",
+      "paragraphs": [
+        "We may update this Privacy Policy from time to time to reflect changes in how the Site works or in applicable requirements. When we do, we will revise the \"Last updated\" date at the top of this page.",
+        "Material changes will be reflected here, and your continued use of the Site after an update means you have reviewed the current version. We encourage you to revisit this page periodically."
+      ],
+      "bullets": []
+    },
+    {
+      "id": "contact",
+      "title": "How to contact us",
+      "paragraphs": [
+        "If you have questions about this Privacy Policy or how information is handled in connection with the Site, you can reach us at support@maskedusd.com, or by using the support form on the Site.",
+        "Please remember: we will never ask for your seed phrase or shielded note secrets, and you should never include them in any message to us."
+      ],
+      "bullets": []
+    }
+  ]
+}

@@ -16,7 +16,8 @@ import {
  * phases carry a solid accent dot ("Shipped"); the rest are "Planned".
  *
  * Honesty: mainnet-live. No firm dates, no audited claims — phases 01–03 are
- * Shipped (factual), $MUSD (04) is the one in progress.
+ * Shipped (factual), $MUSD (04) is in progress, and 05–08 are Planned
+ * (forward-looking direction, not dated commitments).
  */
 
 const EASE_OUT: [number, number, number, number] = [0.16, 0.84, 0.3, 1];
@@ -52,6 +53,30 @@ const PHASES: Phase[] = [
     title: "$MUSD & ecosystem",
     body: "$MUSD launches on Clanker as the access layer, with integrations and utility expanding.",
     status: "now",
+  },
+  {
+    no: "05",
+    title: "Compliant privacy",
+    body: "Association sets go live with selective disclosure — prove your funds are clean without exposing anyone else. Privacy regulators can live with.",
+    status: "planned",
+  },
+  {
+    no: "06",
+    title: "Private payments",
+    body: "Payment links, requests, and recurring transfers — so USDM is something you spend, not just hold.",
+    status: "planned",
+  },
+  {
+    no: "07",
+    title: "Build on USDM",
+    body: "An SDK and docs so any Base app can embed shielded USDM in a few lines. Privacy as a primitive.",
+    status: "planned",
+  },
+  {
+    no: "08",
+    title: "Progressive decentralization",
+    body: "The guardian moves to a multisig, then a timelock — narrowing trust toward the immutable core the contracts already guarantee.",
+    status: "planned",
   },
 ];
 
