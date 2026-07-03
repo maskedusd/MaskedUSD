@@ -1,8 +1,7 @@
 "use client";
 
-import MaskIcon from "@/components/MaskIcon";
 import Footer from "@/components/Footer";
-import ConnectButton from "@/components/web3/ConnectButton";
+import AppHeader from "@/components/app/AppHeader";
 import WalletGate from "@/components/web3/WalletGate";
 import MintRedeemCard from "@/components/app/MintRedeemCard";
 import ShieldedPanel from "@/components/app/ShieldedPanel";
@@ -15,15 +14,7 @@ export default function AppPage() {
   return (
     <WalletGate>
     <div className="flex min-h-screen flex-col bg-bg text-ink">
-      <header className="glass sticky top-0 z-40 border-b border-ink/5">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-3">
-          <a href="/" className="flex items-center gap-2">
-            <MaskIcon width={26} className="shrink-0" />
-            <span className="font-display text-[1.05rem] font-semibold tracking-tight">MaskedUSD</span>
-          </a>
-          <ConnectButton />
-        </div>
-      </header>
+      <AppHeader />
 
       <main className="flex-1">
         <div className="mx-auto max-w-5xl px-5 py-12 sm:py-16">

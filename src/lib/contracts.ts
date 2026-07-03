@@ -11,6 +11,7 @@ export const ERC20_ABI = parseAbi([
   "function totalSupply() view returns (uint256)",
   "function decimals() view returns (uint8)",
   "function symbol() view returns (string)",
+  "event Transfer(address indexed from, address indexed to, uint256 value)",
 ]);
 
 // MintRamp: deposit USDC (approve the VAULT first) → receive USDM 1:1.

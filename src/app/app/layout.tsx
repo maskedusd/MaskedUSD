@@ -4,10 +4,10 @@ import { ToastProvider } from "@/components/web3/Toaster";
 import { IdentityProvider } from "@/components/web3/IdentityProvider";
 
 export const metadata: Metadata = {
-  title: "MaskedUSD — App",
+  title: "MaskedUSD // Dashboard",
   description: "Mint and redeem USDM 1:1 against USDC, and shield it privately on Base.",
   openGraph: {
-    title: "MaskedUSD — App",
+    title: "MaskedUSD // Dashboard",
     description: "Mint and redeem USDM 1:1 against USDC, and shield it privately on Base.",
     type: "website",
   },
