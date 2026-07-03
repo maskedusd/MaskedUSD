@@ -7,7 +7,8 @@ import { NextResponse } from "next/server";
  *
  * Env:
  *  - RESEND_API_KEY  (required to actually send; without it we return 503 with an honest message)
- *  - SUPPORT_INBOX   (default contact@maskedusd.com — where tickets land)
+ *  - SUPPORT_INBOX   (default support@maskedusd.com — where tickets land; note the domain needs a
+ *                     root MX / forwarding for that mailbox to exist, else point this at a real inbox)
  *  - SUPPORT_FROM    (default "MaskedUSD Support <support@maskedusd.com>" — must be on a domain
  *                     verified in Resend)
  *
@@ -67,7 +68,7 @@ export async function POST(req: Request) {
   }
 
   const id = ticketId();
-  const to = process.env.SUPPORT_INBOX ?? "contact@maskedusd.com";
+  const to = process.env.SUPPORT_INBOX ?? "support@maskedusd.com";
   const from = process.env.SUPPORT_FROM ?? "MaskedUSD Support <support@maskedusd.com>";
 
   const text = [
