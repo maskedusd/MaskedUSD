@@ -503,7 +503,15 @@ export default function ShieldedPanel() {
     return "Shield USDM";
   }, [isConnected, live, valid, insufficient, phase]);
 
-  const transferReady = isValidAddress(recipientAddr.trim()) && isValidAmount(transferAmount);
+  // A private send SPENDS two shielded notes — with fewer than two (or a total below the amount)
+  // there is nothing to spend, so the Send button stays disabled instead of failing at proving.
+  const spendableCount = notes.filter((n) => n.status !== "spent").length;
+  const transferAmountUnits = isValidAmount(transferAmount) ? toUnits(transferAmount) : 0n;
+  const transferReady =
+    isValidAddress(recipientAddr.trim()) &&
+    isValidAmount(transferAmount) &&
+    spendableCount >= 2 &&
+    transferAmountUnits <= shieldedTotal;
 
   return (
     <div className="w-full max-w-md rounded-3xl border border-ink/10 bg-surface p-6 shadow-xl shadow-accent/5">
@@ -660,6 +668,17 @@ export default function ShieldedPanel() {
               {recipientAddr.trim() && !isValidAddress(recipientAddr.trim()) && (
                 <p className="mt-1.5 text-[0.72rem] text-red-500">Not a valid musd1… address.</p>
               )}
+              {spendableCount < 2 ? (
+                <p className="mt-2 text-[0.72rem] leading-relaxed text-amber-600">
+                  Private sends spend two shielded notes — you have {spendableCount === 0 ? "none" : "one"}.
+                  Shield USDM {spendableCount === 0 ? "twice (any split)" : "once more"} above to
+                  enable sending.
+                </p>
+              ) : isValidAmount(transferAmount) && transferAmountUnits > shieldedTotal ? (
+                <p className="mt-2 text-[0.72rem] leading-relaxed text-amber-600">
+                  That&apos;s more than your shielded balance ({displayUnits(shieldedTotal)} USDM).
+                </p>
+              ) : null}
               <p className="mt-2 text-[0.7rem] leading-relaxed text-ink-dim">
                 Spends two of your shielded notes; only the recipient&apos;s key can spend what they
                 receive. Posts an encrypted notice so they can find it. ~10s proof.

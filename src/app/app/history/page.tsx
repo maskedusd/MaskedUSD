@@ -5,7 +5,8 @@ import WalletGate from "@/components/web3/WalletGate";
 import HistoryPanel from "@/components/app/HistoryPanel";
 
 export const metadata: Metadata = {
-  title: "MaskedUSD // History",
+  // Root template prefixes "MaskedUSD // " → renders "MaskedUSD // History".
+  title: "History",
   description: "Your USDM activity — mints, redemptions, shields, withdrawals, and transfers.",
 };
 
