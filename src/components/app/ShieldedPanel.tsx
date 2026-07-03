@@ -7,7 +7,6 @@ import {
   Shield,
   Loader2,
   Download,
-  AlertTriangle,
   ArrowUpFromLine,
   Lock,
   Copy,
@@ -80,7 +79,6 @@ export default function ShieldedPanel() {
   const [amount, setAmount] = useState("");
   const [phase, setPhase] = useState<Phase>("idle");
   const [withdrawing, setWithdrawing] = useState<string | null>(null);
-  const [accepting, setAccepting] = useState(false);
   const [notes, setNotes] = useState<StoredNote[]>([]);
   const [copied, setCopied] = useState(false);
   const [recipientAddr, setRecipientAddr] = useState("");
@@ -123,14 +121,11 @@ export default function ShieldedPanel() {
     query: { enabled: !!address && live },
   });
 
-  const isGuardian =
-    !!address && !!addrs?.guardian && address.toLowerCase() === addrs.guardian.toLowerCase();
-
   const valid = isValidAmount(amount);
   const amountUnits = valid ? toUnits(amount) : 0n;
   const balance = usdmBal.data;
   const insufficient = valid && balance !== undefined && amountUnits > balance;
-  const busy = phase !== "idle" || withdrawing !== null || accepting || transferring || scanning;
+  const busy = phase !== "idle" || withdrawing !== null || transferring || scanning;
 
   const shieldedTotal = useMemo(
     () => notes.filter((n) => n.status !== "spent").reduce((s, n) => s + BigInt(n.value), 0n),
@@ -487,34 +482,6 @@ export default function ShieldedPanel() {
     }
   }
 
-  async function acceptCurrentRoot() {
-    if (!live || !address || !publicClient || busy) return;
-    setAccepting(true);
-    const tid = toast.show({ status: "pending", title: "Accepting association root", description: "Confirm in your wallet" });
-    try {
-      const root = (await publicClient.readContract({
-        address: addrs!.pool,
-        abi: SHIELDED_POOL_ABI,
-        functionName: "currentRoot",
-      })) as bigint;
-      const hash = await writeContractAsync({
-        chainId,
-        address: addrs!.pool,
-        abi: SHIELDED_POOL_ABI,
-        functionName: "acceptAssociationRoot",
-        args: [root],
-      });
-      toast.update(tid, { description: "Submitted", hash, chainId });
-      await publicClient.waitForTransactionReceipt({ hash });
-      toast.update(tid, { status: "success", title: "Association root accepted", description: "Withdrawals are open for the current root." });
-    } catch (e) {
-      const msg = (e as { shortMessage?: string })?.shortMessage ?? "rejected";
-      toast.update(tid, { status: "error", title: "Accept failed", description: msg });
-    } finally {
-      setAccepting(false);
-    }
-  }
-
   function exportNotes() {
     const blob = new Blob([JSON.stringify(notes, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -809,36 +776,6 @@ export default function ShieldedPanel() {
             )}
           </div>
 
-          {isGuardian && (
-            <div className="mt-4 rounded-2xl border border-ink/10 bg-bg px-4 py-3">
-              <p className="font-mono text-[0.64rem] uppercase tracking-[0.16em] text-ink-dim">Operator</p>
-              <p className="mt-1 text-[0.76rem] text-ink-muted">
-                Accept the current association root so shielded notes can be withdrawn.
-              </p>
-              <button
-                type="button"
-                onClick={acceptCurrentRoot}
-                disabled={busy}
-                className="mt-2 w-full rounded-xl border border-accent/30 bg-accent-soft py-2 text-[0.8rem] font-medium text-accent-deep transition hover:bg-accent/15 disabled:opacity-50"
-              >
-                Accept current root
-              </button>
-            </div>
-          )}
-
-          <p className="mt-4 text-[0.72rem] leading-relaxed text-ink-dim">
-            Withdrawals require the operator to accept the current pool root; a deposit after yours can
-            briefly pause exits until it&apos;s re-accepted.
-          </p>
-
-          <div className="mt-3 flex gap-2 rounded-2xl border border-dashed border-amber-500/30 bg-amber-500/5 px-4 py-3 text-[0.76rem] leading-relaxed text-ink-muted">
-            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
-            <span>
-              Your note secret is your money — it&apos;s encrypted in this browser under your wallet
-              signature. Back it up — losing it means losing access to the note. Privacy for normal
-              people; not a tool for evading the law.
-            </span>
-          </div>
         </>
       )}
     </div>

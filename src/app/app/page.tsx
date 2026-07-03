@@ -8,6 +8,8 @@ import MintRedeemCard from "@/components/app/MintRedeemCard";
 import ShieldedPanel from "@/components/app/ShieldedPanel";
 import BackingStrip from "@/components/app/BackingStrip";
 import NetworkNotice from "@/components/app/NetworkNotice";
+import OperatorCard from "@/components/app/OperatorCard";
+import AppNotices from "@/components/app/AppNotices";
 
 export default function AppPage() {
   return (
@@ -42,8 +44,14 @@ export default function AppPage() {
             <BackingStrip />
           </div>
 
+          {/* Left column stacks the public-side cards so the two columns stay visually balanced —
+              the shielded panel on the right is tall, so mint/redeem alone left a big blank gap. */}
           <div className="mt-6 grid items-start gap-6 md:grid-cols-2">
-            <MintRedeemCard />
+            <div className="grid justify-items-stretch gap-6">
+              <MintRedeemCard />
+              <OperatorCard />
+              <AppNotices />
+            </div>
             <ShieldedPanel />
           </div>
 

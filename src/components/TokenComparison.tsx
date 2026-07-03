@@ -7,7 +7,7 @@ import {
   type SetStateAction,
 } from "react";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
-import { Check, Copy } from "lucide-react";
+import { Check, Copy, ExternalLink } from "lucide-react";
 import MaskIcon from "./MaskIcon";
 
 type TokenId = "usdm" | "musd";
@@ -46,20 +46,32 @@ function ContractField({
         Contract · Base
       </span>
       {address ? (
-        <button
-          type="button"
-          onClick={copy}
-          title={address}
-          aria-label={`Copy contract address ${address}`}
-          className="inline-flex items-center gap-2 rounded-lg border border-ink/15 bg-surface/60 px-3 py-1.5 font-mono text-[0.72rem] tracking-wider text-ink-muted transition-colors hover:border-accent/40 hover:text-ink"
-        >
-          {address.slice(0, 6)}…{address.slice(-4)}
-          {copied ? (
-            <Check size={12} className="text-accent-deep" />
-          ) : (
-            <Copy size={12} className="opacity-60" />
-          )}
-        </button>
+        <span className={`flex items-stretch gap-1.5 ${align === "right" ? "flex-row-reverse" : ""}`}>
+          <button
+            type="button"
+            onClick={copy}
+            title={address}
+            aria-label={`Copy contract address ${address}`}
+            className="inline-flex items-center gap-2 rounded-lg border border-ink/15 bg-surface/60 px-3 py-1.5 font-mono text-[0.72rem] tracking-wider text-ink-muted transition-colors hover:border-accent/40 hover:text-ink"
+          >
+            {address.slice(0, 6)}…{address.slice(-4)}
+            {copied ? (
+              <Check size={12} className="text-accent-deep" />
+            ) : (
+              <Copy size={12} className="opacity-60" />
+            )}
+          </button>
+          <a
+            href={`https://basescan.org/token/${address}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="View on Basescan"
+            aria-label="View the contract on Basescan"
+            className="inline-flex w-[30px] items-center justify-center rounded-lg border border-ink/15 bg-surface/60 text-ink-muted transition-colors hover:border-accent/40 hover:text-ink"
+          >
+            <ExternalLink size={12} />
+          </a>
+        </span>
       ) : (
         <span className="inline-flex items-center gap-2 rounded-lg border border-dashed border-ink/20 bg-surface/60 px-3 py-1.5 font-mono text-[0.72rem] tracking-wider text-ink-muted">
           <span className="text-ink-dim/60">0x</span>
