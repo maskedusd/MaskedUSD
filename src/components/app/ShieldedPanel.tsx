@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAccount, useChainId, usePublicClient, useReadContract, useWriteContract } from "wagmi";
 import { toHex, parseEventLogs } from "viem";
 import {
@@ -32,6 +32,7 @@ import { decodeMemoLogs, discoverReceivedNotes } from "@/lib/shielded/discovery"
 import {
   addNote,
   loadNotes,
+  removeNote,
   toStored,
   updateNote,
   discoveredToStored,
@@ -113,6 +114,59 @@ export default function ShieldedPanel() {
     void refreshNotes();
   }, [refreshNotes]);
 
+  // Reconcile the LOCAL note store against the ON-CHAIN tree: the store is optimistic, so it can hold
+  // a phantom note (a shield that never landed) or an un-promoted one (a shield that landed but the
+  // browser closed before we recorded it). We rebuild the pool from logs and, for each non-spent note:
+  //   • present in the tree  → mark "shielded" + fix the leaf index (recovers interrupted shields)
+  //   • absent from the tree → delete it (purges phantoms — this is what fixes the double-count)
+  // Loss-safe: a note is only deleted when the chain proves its commitment was never inserted. A
+  // short grace window protects a just-submitted, not-yet-mined shield from being purged mid-flight.
+  const reconcileRef = useRef(false);
+  const reconcileNotes = useCallback(async () => {
+    if (reconcileRef.current || !address || !custodyKey || !publicClient || !poolLive(addrs)) return;
+    let stored: StoredNote[];
+    try {
+      stored = await loadNotes(chainId, address, custodyKey);
+    } catch {
+      return;
+    }
+    const pending = stored.filter((n) => n.status !== "spent");
+    if (pending.length === 0) return;
+    reconcileRef.current = true;
+    try {
+      const logs = await fetchPoolLogs(publicClient, addrs!.pool, POOL_DEPLOY_BLOCK[chainId] ?? 0n);
+      const ix = buildIndexer(logs);
+      const leafByCommitment = new Map<string, number>();
+      ix.leaves.forEach((c, i) => {
+        const hex = `0x${c.toString(16).padStart(64, "0")}`;
+        if (!leafByCommitment.has(hex)) leafByCommitment.set(hex, i);
+      });
+      let changed = false;
+      for (const n of pending) {
+        const onchain = leafByCommitment.get(n.commitment.toLowerCase());
+        if (onchain === undefined) {
+          if (Date.now() - n.createdAt < 120_000) continue; // in-flight grace — don't purge a fresh shield
+          await removeNote(chainId, address, custodyKey, n.commitment);
+          changed = true;
+        } else if (n.status !== "shielded" || n.leafIndex !== onchain) {
+          await updateNote(chainId, address, custodyKey, n.commitment, { status: "shielded", leafIndex: onchain });
+          changed = true;
+        }
+      }
+      if (changed) await refreshNotes();
+    } catch {
+      /* transient RPC error — try again next mount */
+    } finally {
+      reconcileRef.current = false;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address, custodyKey, publicClient, chainId, addrs, refreshNotes]);
+
+  useEffect(() => {
+    void reconcileNotes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reconcileNotes, notes.length]);
+
   const usdmBal = useReadContract({
     address: live ? addrs!.usdm : undefined,
     abi: ERC20_ABI,
@@ -127,8 +181,10 @@ export default function ShieldedPanel() {
   const insufficient = valid && balance !== undefined && amountUnits > balance;
   const busy = phase !== "idle" || withdrawing !== null || transferring || scanning;
 
+  // Count only notes CONFIRMED on-chain ("shielded"). A "shielding" note is in-flight or a phantom
+  // left by a failed shield — it must never inflate "Held privately" (that was the double-count bug).
   const shieldedTotal = useMemo(
-    () => notes.filter((n) => n.status !== "spent").reduce((s, n) => s + BigInt(n.value), 0n),
+    () => notes.filter((n) => n.status === "shielded").reduce((s, n) => s + BigInt(n.value), 0n),
     [notes],
   );
 
@@ -150,10 +206,15 @@ export default function ShieldedPanel() {
       title: "Generating proof on your device",
       description: "This runs locally — keys never leave your browser (~5s)",
     });
+    // Tracks whether the shield actually landed on-chain. The note secret is written BEFORE the tx
+    // (so a browser crash mid-shield can never lose recoverable funds), so on ANY failure where the
+    // shield did NOT land we must delete that note again — otherwise it lingers as a phantom balance.
+    let shieldLanded = false;
+    let commitmentHex: string | undefined;
     try {
       setPhase("proving");
       const note = createShieldNote(amountUnits);
-      const commitmentHex = commitHex(note.commitment);
+      commitmentHex = commitHex(note.commitment);
       await addNote(chainId, address, custodyKey, toStored(note, { status: "shielding" }));
       await refreshNotes();
 
@@ -190,6 +251,11 @@ export default function ShieldedPanel() {
       });
       toast.update(tid, { description: "Submitted — awaiting confirmation", hash: sHash, chainId });
       const receipt = await publicClient.waitForTransactionReceipt({ hash: sHash });
+      // A submitted tx can still REVERT — that used to be marked "shielded" anyway (phantom balance).
+      if (receipt.status !== "success") {
+        throw new Error("The shield transaction reverted on-chain — nothing was shielded.");
+      }
+      shieldLanded = true; // from here the note is real; never delete it on a later error.
 
       let leafIndex: number | undefined;
       try {
@@ -215,6 +281,14 @@ export default function ShieldedPanel() {
     } catch (e) {
       const msg = (e as { shortMessage?: string })?.shortMessage ?? "Shield failed or was rejected";
       toast.update(tid, { status: "error", title: "Shield failed", description: msg });
+      // The shield never landed → delete the phantom note so it can't inflate the balance.
+      if (!shieldLanded && commitmentHex) {
+        try {
+          await removeNote(chainId, address, custodyKey, commitmentHex);
+        } catch {
+          /* store already consistent, or key unavailable — reconcile will catch it */
+        }
+      }
       await refreshNotes();
     } finally {
       setPhase("idle");
@@ -505,7 +579,7 @@ export default function ShieldedPanel() {
 
   // A private send SPENDS two shielded notes — with fewer than two (or a total below the amount)
   // there is nothing to spend, so the Send button stays disabled instead of failing at proving.
-  const spendableCount = notes.filter((n) => n.status !== "spent").length;
+  const spendableCount = notes.filter((n) => n.status === "shielded").length;
   const transferAmountUnits = isValidAmount(transferAmount) ? toUnits(transferAmount) : 0n;
   const transferReady =
     isValidAddress(recipientAddr.trim()) &&

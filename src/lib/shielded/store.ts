@@ -122,6 +122,19 @@ export async function addNote(
   return notes;
 }
 
+/// Remove the note with `commitment` and return the full list. Used to purge a phantom note left by
+/// a shield that never landed on-chain (reverted / rejected), so it can't inflate the balance.
+export async function removeNote(
+  chainId: number,
+  owner: string,
+  custodyKey: Uint8Array,
+  commitment: string,
+): Promise<StoredNote[]> {
+  const notes = (await loadNotes(chainId, owner, custodyKey)).filter((n) => n.commitment !== commitment);
+  await writeNotes(chainId, owner, custodyKey, notes);
+  return notes;
+}
+
 /// Patch the note with `commitment` and return the full list.
 export async function updateNote(
   chainId: number,
