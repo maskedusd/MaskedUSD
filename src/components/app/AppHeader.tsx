@@ -21,15 +21,15 @@ export default function AppHeader() {
 
   return (
     <header className="glass sticky top-0 z-40 border-b border-ink/5">
-      <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-5 py-3">
-        <a href="/" className="flex shrink-0 items-center gap-2">
+      <div className="mx-auto flex max-w-5xl items-center gap-3 px-5 py-3">
+        <a href="/" className="flex flex-1 shrink-0 items-center gap-2">
           <MaskIcon width={26} className="shrink-0" />
           <span className="hidden font-display text-[1.05rem] font-semibold tracking-tight sm:inline">
             MaskedUSD
           </span>
         </a>
 
-        <nav className="flex items-center gap-1" aria-label="App">
+        <nav className="flex items-center justify-center gap-1" aria-label="App">
           {NAV.map((item) => {
             const active = pathname === item.href;
             return (
@@ -56,7 +56,7 @@ export default function AppHeader() {
           </span>
         </nav>
 
-        <div className="relative flex items-center gap-1.5">
+        <div className="relative flex flex-1 items-center justify-end gap-1.5">
           <NotificationsBell />
           <ConnectButton />
         </div>

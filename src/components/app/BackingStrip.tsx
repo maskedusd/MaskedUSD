@@ -30,7 +30,7 @@ export default function BackingStrip() {
     backing.data !== undefined && supply.data !== undefined && backing.data === supply.data;
 
   return (
-    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-2xl border border-ink/10 bg-surface px-5 py-3 text-[0.82rem]">
+    <div className="flex w-fit max-w-full flex-wrap items-center gap-x-6 gap-y-2 rounded-2xl border border-ink/10 bg-surface px-5 py-3 text-[0.82rem]">
       <Stat
         label="USDM supply"
         value={live ? `${displayUnits(supply.data)} USDM` : "—"}
