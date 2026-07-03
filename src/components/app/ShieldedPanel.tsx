@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAccount, useChainId, usePublicClient, useReadContract, useWriteContract } from "wagmi";
+import { base } from "wagmi/chains";
 import { toHex, parseEventLogs } from "viem";
 import {
   Shield,
@@ -188,6 +189,15 @@ export default function ShieldedPanel() {
     [notes],
   );
 
+  // Nudge the guardian auto-accept endpoint (fire-and-forget). Called right after the actions that
+  // change the pool root (shield / private send) so withdrawals re-open without anyone clicking, and
+  // when a withdraw finds the root unaccepted. Safe to spam — the endpoint no-ops if already accepted
+  // and only ever accepts the pool's own current root. Never blocks or throws into the UI.
+  function nudgeRootAccept() {
+    if (chainId !== base.id) return; // guardian service is mainnet-only
+    void fetch("/api/operator/accept-root", { method: "POST", keepalive: true }).catch(() => {});
+  }
+
   async function copyAddress() {
     if (!myAddress) return;
     try {
@@ -273,6 +283,7 @@ export default function ShieldedPanel() {
       await refreshNotes();
       usdmBal.refetch();
       setAmount("");
+      nudgeRootAccept(); // the tree changed → let the guardian service re-open withdrawals
       toast.update(tid, {
         status: "success",
         title: `Shielded ${displayUnits(amountUnits)} USDM`,
@@ -337,10 +348,11 @@ export default function ShieldedPanel() {
         args: [associationRoot],
       })) as boolean;
       if (!accepted) {
+        nudgeRootAccept(); // ask the guardian service to accept it now
         toast.update(tid, {
           status: "error",
-          title: "Withdrawals not open for this root",
-          description: "A newer deposit changed the pool root — the operator must accept the current root.",
+          title: "Withdrawals re-opening",
+          description: "A newer deposit changed the pool root. The operator is accepting it — try again in ~30s.",
         });
         return;
       }
@@ -477,6 +489,7 @@ export default function ShieldedPanel() {
         await publicClient.waitForTransactionReceipt({ hash: mHash });
         removePendingMemo(chainId, address, recipientCommitHex);
         setPending(loadPendingMemos(chainId, address));
+        nudgeRootAccept(); // the transfer added output commitments → re-open withdrawals
         toast.update(tid, {
           status: "success",
           title: `Sent ${displayUnits(amt)} USDM privately`,
