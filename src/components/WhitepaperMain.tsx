@@ -267,7 +267,7 @@ export default function WhitepaperMain() {
             {
               icon: Lock,
               t: "Immutability is a feature",
-              b: "The vault, ramps, and shielded pool are non-upgradeable. No proxies, no admin withdrawal path, no one who can freeze your funds or mint unbacked dollars. What you audit is what runs — forever.",
+              b: "The vault, ramps, and shielded pool are non-upgradeable. No proxies, no admin withdrawal path, no admin who can freeze your USDM, block your exit, or mint unbacked dollars. What you audit is what runs — forever.",
             },
             {
               icon: Users,
@@ -277,7 +277,7 @@ export default function WhitepaperMain() {
             {
               icon: Scale,
               t: "Compliance in the architecture",
-              b: "Sanctions screening is enforced by the mint and redeem ramps themselves — the boundary where dollars become legible. It is not a bolt-on and cannot be skipped.",
+              b: "Screening is enforced by the mint and redeem ramps themselves — the boundary where dollars become legible. It is wired into the immutable contracts, not bolted on beside them.",
             },
             {
               icon: Snowflake,
@@ -314,10 +314,9 @@ export default function WhitepaperMain() {
 
       {/* ── 03 On-chain architecture ─────────────────────────────────────── */}
       <Band tone="wash">
-        <SectionHead kicker="03 · Architecture" title="Six immutable contracts.">
-          The on-chain core is deliberately small. Every contract is non-upgradeable and verified
-          on Basescan; the only privileged authority anywhere is pause + association-root
-          acceptance, held by the guardian.
+        <SectionHead kicker="03 · Architecture" title="A deliberately small immutable core.">
+          Every contract is non-upgradeable and verified on Basescan; the only privileged authority
+          anywhere is pause + association-root acceptance, held by the guardian.
         </SectionHead>
         <motion.div
           variants={reveal}
@@ -340,8 +339,9 @@ export default function WhitepaperMain() {
                 ["MintRamp", "USDC in → USDM out. Runs the sanctions-screening hook.", "Pause only"],
                 ["RedeemRamp", "USDM in → USDC out. Same screening at the exit boundary.", "Pause only"],
                 ["ShieldedPool", "The privacy core: a commitment Merkle tree + nullifier set.", "Pause + accept association roots"],
-                ["Verifiers", "On-chain UltraHonk verification of every shield / transfer / unshield proof.", "None"],
+                ["Verifiers (×3) + adapter", "Immutable UltraHonk verification of every shield / transfer / unshield proof.", "None"],
                 ["USDM", "Standard 6-decimal ERC-20; mint/burn callable only by the ramps.", "None"],
+                ["NoteMemo", "Stateless encrypted payment-notice channel. Holds no funds; decoupled from the pool.", "None"],
               ].map(([c, r, a]) => (
                 <tr key={c} className="border-b border-ink/[0.06] last:border-0">
                   <td className="px-6 py-4 font-mono text-[0.8rem] text-ink">{c}</td>
@@ -378,7 +378,9 @@ export default function WhitepaperMain() {
       <Band tone="white">
         <SectionHead kicker="04 · The shielded pool" title="Notes, commitments, nullifiers.">
           Inside the pool, dollars are notes — UTXOs whose contents only their owner knows. The
-          chain stores commitments; ownership and amounts never appear on the public ledger.
+          chain stores commitments; inside the pool, ownership and transfer amounts never appear on
+          the public ledger. (Amounts entering and leaving the pool — shields and withdrawals — are
+          public, like any on-chain transaction.)
         </SectionHead>
         <div className="mt-12 grid gap-6 lg:grid-cols-2">
           <motion.div
@@ -399,8 +401,8 @@ nullifier  = H(owner_priv, leaf_index)`}
               depth-32 Merkle tree — the same tree the contracts, the circuits, and the client all
               compute identically. Spending a note reveals only its{" "}
               <span className="font-medium text-ink">nullifier</span>, which marks it spent without
-              disclosing which commitment it was: double-spends are impossible, and unlinkability
-              is preserved.
+              disclosing which commitment it was: double-spends are impossible, and on-chain
+              unlinkability is preserved.
             </p>
             <p className="text-sm leading-relaxed text-ink-muted">
               Private transfers are <span className="font-medium text-ink">JoinSplit</span>: spend two input
@@ -449,7 +451,7 @@ nullifier  = H(owner_priv, leaf_index)`}
 
       {/* ── 05 Privacy that complements compliance ───────────────────────── */}
       <Band tone="wash">
-        <SectionHead kicker="05 · Compliance posture" title="Not a mixer. Provably.">
+        <SectionHead kicker="05 · Compliance posture" title="Not a mixer. By design.">
           The point is not to hide where money came from — it&apos;s that your finances shouldn&apos;t be a
           public feed. The design follows the Privacy Pools approach: keep the graph private inside
           the pool, screen at the boundaries, and let exits prove they belong to an honest set.
@@ -464,11 +466,11 @@ nullifier  = H(owner_priv, leaf_index)`}
           {[
             {
               t: "Screen where money is legible",
-              b: "Every mint and every redemption passes a sanctions-screening oracle at the ramp — the point where dollars touch the regulated world. The pool itself never needs to see identities.",
+              b: "Every mint and every redemption passes an on-chain screening check at the ramp — the point where dollars touch the regulated world. Today that check is a guardian-managed blocklist oracle; a dedicated screening provider is the designed direction. The pool itself never needs to see identities.",
             },
             {
               t: "Association-set exits",
-              b: "Every withdrawal proves membership in an association root accepted on-chain. The designed model derives that set from the full commitment stream minus a published exclusion ledger — so flagged funds can be excluded from exits without deanonymizing anyone else.",
+              b: "Every withdrawal proves membership in an association root accepted on-chain. The designed model derives that set from the full commitment stream minus a published exclusion ledger — so flagged funds can be excluded from exits without deanonymizing anyone else. Today the guardian accepts the pool's current root; the exclusion ledger is the designed direction and is not yet live.",
             },
             {
               t: "Validity is public",
@@ -591,7 +593,7 @@ nullifier  = H(owner_priv, leaf_index)`}
                 "All contracts are immutable and source-verified on Basescan — anyone can review exactly what runs.",
                 "Independent security review and audits are in the works; results will be published when complete. We won't claim an audit we don't have.",
                 "A public bug bounty is planned.",
-                "The guardian's authority is pause + association-root acceptance only. It cannot move funds, mint, censor a specific user's exit, or upgrade anything.",
+                "The guardian's authority is pause + association-root acceptance. It cannot move funds, mint, or upgrade anything, and a pause never blocks exits. Root acceptance is the one exit-side power it holds: which association roots are accepted determines which notes can withdraw — that is the compliance lever, named plainly.",
               ].map((x) => (
                 <li key={x} className="flex items-start gap-2.5">
                   <span aria-hidden="true" className="mt-[0.45rem] h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
@@ -612,7 +614,8 @@ nullifier  = H(owner_priv, leaf_index)`}
               {[
                 "Smart-contract and circuit risk: a flaw in the contracts or the zero-knowledge circuits could put funds at risk. Immutability means bugs cannot be patched in place.",
                 "Issuer risk: the backing is native USDC; its issuer can freeze the vault's balance. This would halt redemptions while it lasted.",
-                "Exit liveness: withdrawals require an accepted association root; after new deposits, exits pause briefly until the current root is re-accepted by the operator.",
+                "Exit liveness: withdrawals require an association root accepted by the guardian. After new deposits, exits depend on the guardian accepting an updated root; if it stops doing so, withdrawals stall until it resumes.",
+                "Privacy limits: privacy strengthens with pool usage. Early on, the anonymity set is small, and matching public shield/withdraw amounts or timing can narrow who paid whom. Network-level metadata (IP, RPC provider) is outside the protocol's protection.",
                 "Key loss: shielded note secrets exist only client-side. If a user loses them (and any backup), the notes are unrecoverable by anyone — including us.",
               ].map((x) => (
                 <li key={x} className="flex items-start gap-2.5">
@@ -628,8 +631,8 @@ nullifier  = H(owner_priv, leaf_index)`}
       {/* ── 09 Deployment ────────────────────────────────────────────────── */}
       <Band tone="wash">
         <SectionHead kicker="09 · Deployment" title="Live on Base.">
-          The only official contract addresses. Verify by address, not by name or ticker — anything
-          else claiming to be MaskedUSD is not us.
+          The official addresses of the user-facing contracts. Verify by address, not by name or
+          ticker — anything else claiming to be MaskedUSD is not us.
         </SectionHead>
         <motion.div
           variants={reveal}

@@ -106,9 +106,14 @@ export default function SiteHeader({ entered = false }: { entered?: boolean }) {
                 onBlur={(e) => {
                   if (!e.currentTarget.contains(e.relatedTarget as Node)) setRoadmapOpen(false);
                 }}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") setRoadmapOpen(false);
+                }}
               >
                 <SmoothScrollLink
                   targetId={link.id}
+                  aria-expanded={roadmapOpen}
+                  aria-haspopup="true"
                   className="rounded-full px-2.5 py-1.5 text-[0.8rem] font-medium text-ink-muted transition-colors hover:text-ink"
                 >
                   {link.label}
