@@ -8,6 +8,7 @@ import {
   Shield,
   Loader2,
   Download,
+  AlertTriangle,
   ArrowUpFromLine,
   Lock,
   Copy,
@@ -198,6 +199,32 @@ export default function ShieldedPanel() {
     void fetch("/api/operator/accept-root", { method: "POST", keepalive: true }).catch(() => {});
   }
 
+  // Post the encrypted discovery notice to NoteMemo. This is the second, separate tx of a private
+  // send, and the step whose failure leaves a payment UNDISCOVERABLE by the recipient until resent.
+  // One automatic retry on a transient (non-rejection) error — duplicate posts are harmless because
+  // discovery dedupes by commitment, so a retry after an ambiguous RPC error costs a fraction of a
+  // cent at worst, never correctness. Returns true only once the post is confirmed on-chain.
+  async function postDiscoveryMemo(commitment: bigint, ciphertext: `0x${string}`): Promise<boolean> {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const hash = await writeContractAsync({
+          chainId,
+          address: addrs!.noteMemo,
+          abi: NOTE_MEMO_ABI,
+          functionName: "post",
+          args: [commitment, ciphertext],
+        });
+        const r = await publicClient!.waitForTransactionReceipt({ hash });
+        if (r.status === "success") return true;
+      } catch (e) {
+        const msg = ((e as { shortMessage?: string })?.shortMessage ?? String(e)).toLowerCase();
+        if (msg.includes("reject") || msg.includes("denied") || msg.includes("user ")) return false;
+      }
+      await new Promise((res) => setTimeout(res, 1500));
+    }
+    return false;
+  }
+
   async function copyAddress() {
     if (!myAddress) return;
     try {
@@ -247,7 +274,24 @@ export default function ShieldedPanel() {
           functionName: "approve",
           args: [addrs!.pool, amountUnits],
         });
-        await publicClient.waitForTransactionReceipt({ hash: aHash });
+        const aReceipt = await publicClient.waitForTransactionReceipt({ hash: aHash });
+        if (aReceipt.status !== "success") {
+          throw new Error("USDM approval reverted — nothing was shielded.");
+        }
+        // Right after an approve confirms, an RPC (or the wallet's own pre-sign simulation) can still
+        // read the OLD allowance and reject the shield — the "fails the first time, works the second"
+        // bug. Wait until the new allowance is actually readable (or ~15s) before sending the shield.
+        toast.update(tid, { title: "Confirming approval", description: "Syncing on-chain state…" });
+        for (let i = 0; i < 20; i++) {
+          const current = (await publicClient.readContract({
+            address: addrs!.usdm,
+            abi: ERC20_ABI,
+            functionName: "allowance",
+            args: [address, addrs!.pool],
+          })) as bigint;
+          if (current >= amountUnits) break;
+          await new Promise((r) => setTimeout(r, 750));
+        }
       }
 
       setPhase("shielding");
@@ -478,28 +522,21 @@ export default function ShieldedPanel() {
       const recipientCommitHex = commitHex(plan.recipient.commitment);
       addPendingMemo(chainId, address, { commitment: recipientCommitHex, ciphertext: memoHex });
       setPending(loadPendingMemos(chainId, address));
-      try {
-        const mHash = await writeContractAsync({
-          chainId,
-          address: addrs!.noteMemo,
-          abi: NOTE_MEMO_ABI,
-          functionName: "post",
-          args: [plan.recipient.commitment, memoHex],
-        });
-        await publicClient.waitForTransactionReceipt({ hash: mHash });
+      nudgeRootAccept(); // the transfer added output commitments → re-open withdrawals
+      const posted = await postDiscoveryMemo(plan.recipient.commitment, memoHex);
+      if (posted) {
         removePendingMemo(chainId, address, recipientCommitHex);
         setPending(loadPendingMemos(chainId, address));
-        nudgeRootAccept(); // the transfer added output commitments → re-open withdrawals
         toast.update(tid, {
           status: "success",
           title: `Sent ${displayUnits(amt)} USDM privately`,
-          description: "The recipient can now discover it.",
+          description: "Done — the recipient can now find it with “Check received”.",
         });
-      } catch {
+      } else {
         toast.update(tid, {
           status: "success",
-          title: `Sent ${displayUnits(amt)} USDM privately`,
-          description: "Payment is final, but the discovery notice didn't post — use Resend below.",
+          title: `Sent ${displayUnits(amt)} USDM — action needed`,
+          description: "Payment is final, but the recipient can't see it yet. Tap “Resend notice” below.",
         });
       }
 
@@ -551,21 +588,13 @@ export default function ShieldedPanel() {
   async function resendMemo(m: PendingMemo) {
     if (!canTransfer || !address || !publicClient) return;
     const tid = toast.show({ status: "pending", title: "Resending payment notice", description: "Confirm in your wallet" });
-    try {
-      const hash = await writeContractAsync({
-        chainId,
-        address: addrs!.noteMemo,
-        abi: NOTE_MEMO_ABI,
-        functionName: "post",
-        args: [BigInt(m.commitment), m.ciphertext as `0x${string}`],
-      });
-      await publicClient.waitForTransactionReceipt({ hash });
+    const ok = await postDiscoveryMemo(BigInt(m.commitment), m.ciphertext as `0x${string}`);
+    if (ok) {
       removePendingMemo(chainId, address, m.commitment);
       setPending(loadPendingMemos(chainId, address));
-      toast.update(tid, { status: "success", title: "Payment notice sent", description: "The recipient can now discover the note." });
-    } catch (e) {
-      const msg = (e as { shortMessage?: string })?.shortMessage ?? "rejected";
-      toast.update(tid, { status: "error", title: "Resend failed", description: msg });
+      toast.update(tid, { status: "success", title: "Payment notice posted", description: "The recipient can now discover the note with “Check received”." });
+    } else {
+      toast.update(tid, { status: "error", title: "Still couldn't post the notice", description: "Try again in a moment — the payment itself is already final and safe." });
     }
   }
 
@@ -768,22 +797,28 @@ export default function ShieldedPanel() {
               ) : null}
               <p className="mt-2 text-[0.7rem] leading-relaxed text-ink-dim">
                 Spends two of your shielded notes; only the recipient&apos;s key can spend what they
-                receive. Posts an encrypted notice so they can find it. ~10s proof.
+                receive. Two confirmations: the transfer, then an encrypted notice so they can find it
+                (~10s proof). The recipient sees it after they tap “Check received”.
               </p>
             </div>
           )}
 
-          {/* Pending discovery notices (re-postable) */}
+          {/* Pending discovery notices (re-postable) — a settled payment the recipient can't see YET. */}
           {pending.length > 0 && (
-            <div className="mt-4 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4">
-              <p className="font-mono text-[0.64rem] uppercase tracking-[0.16em] text-amber-600">
-                Payment notice not posted
+            <div className="mt-4 rounded-2xl border-2 border-amber-500/50 bg-amber-500/10 p-4">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
+                <p className="font-mono text-[0.66rem] font-semibold uppercase tracking-[0.14em] text-amber-700">
+                  {pending.length === 1 ? "1 payment" : `${pending.length} payments`} awaiting notice
+                </p>
+              </div>
+              <p className="mt-2 text-[0.78rem] leading-relaxed text-ink-muted">
+                The transfer is <span className="font-medium text-ink">already final</span> — but a
+                private payment needs a second step: an encrypted notice so the recipient can find it.
+                That step didn&apos;t post. <span className="font-medium text-ink">Tap Resend</span> (one
+                more wallet confirmation) or the recipient will never see it.
               </p>
-              <p className="mt-1 text-[0.74rem] leading-relaxed text-ink-muted">
-                These payments settled, but the recipient can&apos;t discover them until the notice is
-                posted. Resend it:
-              </p>
-              <ul className="mt-2 space-y-1.5">
+              <ul className="mt-3 space-y-1.5">
                 {pending.map((m) => (
                   <li key={m.commitment} className="flex items-center justify-between gap-2 text-[0.76rem]">
                     <span className="font-mono text-ink-muted">{short(m.commitment)}</span>
@@ -791,9 +826,9 @@ export default function ShieldedPanel() {
                       type="button"
                       onClick={() => resendMemo(m)}
                       disabled={busy}
-                      className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-0.5 text-[0.7rem] font-medium text-amber-700 transition hover:bg-amber-500/25 disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-3 py-1 text-[0.74rem] font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50"
                     >
-                      <RotateCw className="h-3 w-3" /> Resend
+                      <RotateCw className="h-3 w-3" /> Resend notice
                     </button>
                   </li>
                 ))}
