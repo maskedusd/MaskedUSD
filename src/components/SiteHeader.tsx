@@ -1,14 +1,17 @@
 "use client";
 
 import { useState, type MouseEvent } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  AnimatePresence,
   motion,
   useMotionValueEvent,
   useReducedMotion,
   useScroll,
   useTransform,
 } from "framer-motion";
+import { FileText } from "lucide-react";
 import MaskIcon from "./MaskIcon";
 import SmoothScrollLink from "./SmoothScrollLink";
 import { XIcon, TelegramIcon } from "./BrandIcons";
@@ -44,6 +47,7 @@ export default function SiteHeader({ entered = false }: { entered?: boolean }) {
   const { scrollY } = useScroll();
   const maxWidth = useTransform(scrollY, [0, 200], [1024, 780], { clamp: true });
   const [scrolled, setScrolled] = useState(false);
+  const [roadmapOpen, setRoadmapOpen] = useState(false);
 
   useMotionValueEvent(scrollY, "change", (v) => {
     const next = v > 24;
@@ -88,17 +92,61 @@ export default function SiteHeader({ entered = false }: { entered?: boolean }) {
           </span>
         </a>
 
-        {/* Centered section nav — smooth-scrolls without a /#hash. */}
+        {/* Centered section nav — smooth-scrolls without a /#hash. Roadmap additionally opens a
+            hover dropdown with the Whitepaper link (also open on keyboard focus). */}
         <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-0.5 md:flex">
-          {NAV_LINKS.map((link) => (
-            <SmoothScrollLink
-              key={link.id}
-              targetId={link.id}
-              className="rounded-full px-2.5 py-1.5 text-[0.8rem] font-medium text-ink-muted transition-colors hover:text-ink"
-            >
-              {link.label}
-            </SmoothScrollLink>
-          ))}
+          {NAV_LINKS.map((link) =>
+            link.id === "roadmap" ? (
+              <div
+                key={link.id}
+                className="relative flex items-center"
+                onMouseEnter={() => setRoadmapOpen(true)}
+                onMouseLeave={() => setRoadmapOpen(false)}
+                onFocus={() => setRoadmapOpen(true)}
+                onBlur={(e) => {
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) setRoadmapOpen(false);
+                }}
+              >
+                <SmoothScrollLink
+                  targetId={link.id}
+                  className="rounded-full px-2.5 py-1.5 text-[0.8rem] font-medium text-ink-muted transition-colors hover:text-ink"
+                >
+                  {link.label}
+                </SmoothScrollLink>
+                <AnimatePresence>
+                  {roadmapOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: reduceMotion ? 0 : 7, scale: reduceMotion ? 1 : 0.96, x: "-50%" }}
+                      animate={{ opacity: 1, y: 0, scale: 1, x: "-50%" }}
+                      exit={{ opacity: 0, y: reduceMotion ? 0 : 5, scale: reduceMotion ? 1 : 0.97, x: "-50%" }}
+                      transition={{ duration: reduceMotion ? 0 : 0.18, ease: EASE_OUT }}
+                      className="absolute left-1/2 top-full z-50 origin-top pt-2"
+                    >
+                      {/* pt-2 keeps the hover unbroken between the trigger and the panel */}
+                      <div className="glass rounded-2xl p-1.5 shadow-[0_18px_50px_-22px_rgba(27,20,56,0.35)]">
+                        <Link
+                          href="/whitepaper"
+                          onClick={() => setRoadmapOpen(false)}
+                          className="flex items-center gap-2 whitespace-nowrap rounded-xl px-3.5 py-2 text-[0.8rem] font-medium text-ink-muted transition-colors hover:bg-ink/[0.06] hover:text-ink"
+                        >
+                          <FileText size={14} className="text-accent-deep" aria-hidden="true" />
+                          Whitepaper
+                        </Link>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ) : (
+              <SmoothScrollLink
+                key={link.id}
+                targetId={link.id}
+                className="rounded-full px-2.5 py-1.5 text-[0.8rem] font-medium text-ink-muted transition-colors hover:text-ink"
+              >
+                {link.label}
+              </SmoothScrollLink>
+            ),
+          )}
         </div>
 
         <div className="flex shrink-0 items-center gap-0.5">

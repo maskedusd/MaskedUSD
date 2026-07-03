@@ -183,6 +183,17 @@ export default function Footer() {
                   </SmoothScrollLink>
                 </li>
               ))}
+              <li>
+                <a
+                  href="/whitepaper"
+                  className="group inline-flex items-center gap-1 text-sm text-ink-muted transition-colors hover:text-ink"
+                >
+                  Whitepaper
+                  <span className="-translate-x-1 text-accent opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100">
+                    →
+                  </span>
+                </a>
+              </li>
             </ul>
           </motion.div>
 
