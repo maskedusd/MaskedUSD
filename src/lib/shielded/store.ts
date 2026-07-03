@@ -21,6 +21,7 @@ export interface StoredNote {
   commitment: string; // 0x hex
   status: NoteStatus;
   received?: boolean; // true if discovered via a NoteMemo (paid to us), vs self-shielded
+  change?: boolean; // true if this is the change output of a private send we made
   txHash?: string;
   leafIndex?: number;
   createdAt: number;

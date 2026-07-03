@@ -258,7 +258,9 @@ export default function HistoryPanel() {
                     ? "Received privately"
                     : n.status === "spent"
                       ? "Note spent (sent or withdrawn)"
-                      : "Shielded note"
+                      : n.change
+                        ? "Change from a private send"
+                        : "Shielded note"
                 }
                 detail={n.status === "spent" ? "spent" : "spendable"}
                 amount={`${n.received ? "+" : ""}${displayUnits(BigInt(n.value))}`}

@@ -511,7 +511,7 @@ export default function ShieldedPanel() {
           custodyKey,
           toStored(
             { value: plan.change.value, ownerPriv: plan.change.ownerPriv, blinding: plan.change.blinding, assetId: 0n, commitment: plan.change.commitment },
-            { status: "shielded", leafIndex: changeLeaf, txHash: hash },
+            { status: "shielded", leafIndex: changeLeaf, txHash: hash, change: true },
           ),
         );
       }
@@ -530,7 +530,10 @@ export default function ShieldedPanel() {
         toast.update(tid, {
           status: "success",
           title: `Sent ${displayUnits(amt)} USDM privately`,
-          description: "Done — the recipient can now find it with “Check received”.",
+          description:
+            plan.change.value > 0n
+              ? `Done — it'll appear for the recipient automatically. ${displayUnits(plan.change.value)} USDM came back to you as change.`
+              : "Done — it'll appear for the recipient automatically.",
         });
       } else {
         toast.update(tid, {
@@ -946,6 +949,14 @@ export default function ShieldedPanel() {
                         {n.received && (
                           <span className="rounded-full bg-accent-soft px-1.5 py-0.5 text-[0.6rem] font-medium text-accent-deep">
                             received
+                          </span>
+                        )}
+                        {n.change && (
+                          <span
+                            title="Change returned to you from a private send — like the change from paying with a larger bill"
+                            className="rounded-full border border-ink/10 bg-bg-wash px-1.5 py-0.5 text-[0.6rem] font-medium text-ink-muted"
+                          >
+                            change
                           </span>
                         )}
                         <span className="font-mono text-ink-muted">{short(n.commitment)}</span>
